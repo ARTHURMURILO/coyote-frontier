@@ -4,14 +4,14 @@
     children:
 #    - id: NFBreakerFlip # this suffocates people :c
 #    - id: NFIonStorm # Coyote Edit This currently results in unfixable ion laws and drone lawset
-    - id: NFPowerGridCheck
+#    - id: NFPowerGridCheck
     - id: NFRandomSentience
-    - id: NFSolarFlare
-    - id: NFVentClog
-    - id: NFBluespaceCargoCrate
-    - id: NFBluespaceMcCargoCrate
-    - id: NFBluespaceSyndicateCrate
-    - id: NFBluespaceBrokenMcDelivery
+#    - id: NFSolarFlare
+#    - id: NFVentClog
+#    - id: NFBluespaceCargoCrate
+#    - id: NFBluespaceMcCargoCrate
+#    - id: NFBluespaceSyndicateCrate
+#    - id: NFBluespaceBrokenMcDelivery
     - id: NFSmugglingFax
 
 - type: entity
