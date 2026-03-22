@@ -1,0 +1,12 @@
+- type: soundCollection
+  id: EyebrowVineboom
+  files:
+  - /Audio/_PS/Voice/Emote/vineboom.ogg
+
+- type: emoteSounds
+  id: Eyebrow
+  params:
+    variation: 0
+  sounds:
+    Eyebrow:
+      collection: EyebrowVineboom

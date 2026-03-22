@@ -1,0 +1,16 @@
+- type: emote
+  id: Eyebrow
+  name: chat-emote-name-eyebrow
+  category: General
+  available: false
+  chatMessages: [chat-emote-msg-eyebrow]
+  whitelist:
+    components:
+    - Vocal
+  blacklist:
+    components:
+    - BorgChassis
+  chatTriggers:
+  - eyebrow
+  - eyebrows
+  - vineboom
