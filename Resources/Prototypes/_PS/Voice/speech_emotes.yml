@@ -2,7 +2,7 @@
   id: Eyebrow
   name: chat-emote-name-eyebrow
   category: General
-  available: false
+  available: true
   chatMessages: [chat-emote-msg-eyebrow]
   whitelist:
     components:
@@ -14,3 +14,4 @@
   - eyebrow
   - eyebrows
   - vineboom
+  - vinebooms

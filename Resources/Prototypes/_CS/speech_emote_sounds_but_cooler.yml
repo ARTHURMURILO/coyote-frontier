@@ -194,11 +194,5 @@
       collection: IPCWhirrs
       params:
         variation: 0
-
-
-
-
-
-
-
-
+    Eyebrow:
+      path: /Audio/_PS/Voice/Emote/vineboom.ogg
