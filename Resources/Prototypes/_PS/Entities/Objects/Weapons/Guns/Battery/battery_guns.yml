@@ -1,8 +1,8 @@
 - type: entity
   name: svalinn 770
-  parent: [WeaponLaserSvalinn, BaseC3Contraband]
+  parent: [NFWeaponEnergyPistolLaserSvalinn, BaseC3Contraband]
   prefix: Caspian
-  id: WeaponLaserSvalinnCaspian
+  id: NFWeaponEnergyPistolLaserSvalinnCaspian
   description: Although it's usual model is a cheap and mass produced pistol, this one appears to be a unique special edition that fixes many of the issues of the original, while also increasing the efficiency of the weapon.
   components:
   - type: Gun
