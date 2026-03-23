@@ -1,0 +1,447 @@
+- type: marking
+  id: PSGenitalBreasts0
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_0_FRONT_primary: Genital
+    m_breasts_pair_0_FRONT_secondary: Genital
+    m_breasts_pair_0_BEHIND_primary: TailBehind
+    m_breasts_pair_0_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_0_FRONT_primary: m_breasts_pair_0_BEHIND_primary
+    m_breasts_pair_0_FRONT_secondary: m_breasts_pair_0_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_0_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_0_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_0_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_0_BEHIND_secondary
+
+- type: marking
+  id: PSGenitalBreasts1
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_1_FRONT_primary: Genital
+    m_breasts_pair_1_FRONT_secondary: Genital
+    m_breasts_pair_1_BEHIND_primary: TailBehind
+    m_breasts_pair_1_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_1_FRONT_primary: m_breasts_pair_1_BEHIND_primary
+    m_breasts_pair_1_FRONT_secondary: m_breasts_pair_1_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_1_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_1_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_1_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_1_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts2
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_2_FRONT_primary: Genital
+    m_breasts_pair_2_FRONT_secondary: Genital
+    m_breasts_pair_2_BEHIND_primary: TailBehind
+    m_breasts_pair_2_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_2_FRONT_primary: m_breasts_pair_2_BEHIND_primary
+    m_breasts_pair_2_FRONT_secondary: m_breasts_pair_2_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_2_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_2_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_2_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_2_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts3
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_3_FRONT_primary: Genital
+    m_breasts_pair_3_FRONT_secondary: Genital
+    m_breasts_pair_3_BEHIND_primary: TailBehind
+    m_breasts_pair_3_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_3_FRONT_primary: m_breasts_pair_3_BEHIND_primary
+    m_breasts_pair_3_FRONT_secondary: m_breasts_pair_3_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_3_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_3_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_3_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_3_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts4
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_4_FRONT_primary: Genital
+    m_breasts_pair_4_FRONT_secondary: Genital
+    m_breasts_pair_4_BEHIND_primary: TailBehind
+    m_breasts_pair_4_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_4_FRONT_primary: m_breasts_pair_4_BEHIND_primary
+    m_breasts_pair_4_FRONT_secondary: m_breasts_pair_4_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_4_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_4_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_4_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_4_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts5
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_5_FRONT_primary: Genital
+    m_breasts_pair_5_FRONT_secondary: Genital
+    m_breasts_pair_5_BEHIND_primary: TailBehind
+    m_breasts_pair_5_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_5_FRONT_primary: m_breasts_pair_5_BEHIND_primary
+    m_breasts_pair_5_FRONT_secondary: m_breasts_pair_5_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_5_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_5_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_5_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_5_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts6
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_6_FRONT_primary: Genital
+    m_breasts_pair_6_FRONT_secondary: Genital
+    m_breasts_pair_6_BEHIND_primary: TailBehind
+    m_breasts_pair_6_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_6_FRONT_primary: m_breasts_pair_6_BEHIND_primary
+    m_breasts_pair_6_FRONT_secondary: m_breasts_pair_6_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_6_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_6_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_6_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_6_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts7
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_7_FRONT_primary: Genital
+    m_breasts_pair_7_FRONT_secondary: Genital
+    m_breasts_pair_7_BEHIND_primary: TailBehind
+    m_breasts_pair_7_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_7_FRONT_primary: m_breasts_pair_7_BEHIND_primary
+    m_breasts_pair_7_FRONT_secondary: m_breasts_pair_7_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_7_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_7_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_7_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_7_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts8
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_8_FRONT_primary: Genital
+    m_breasts_pair_8_FRONT_secondary: Genital
+    m_breasts_pair_8_BEHIND_primary: TailBehind
+    m_breasts_pair_8_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_8_FRONT_primary: m_breasts_pair_8_BEHIND_primary
+    m_breasts_pair_8_FRONT_secondary: m_breasts_pair_8_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_8_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_8_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_8_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_8_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts9
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_9_FRONT_primary: Genital
+    m_breasts_pair_9_FRONT_secondary: Genital
+    m_breasts_pair_9_BEHIND_primary: TailBehind
+    m_breasts_pair_9_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_9_FRONT_primary: m_breasts_pair_9_BEHIND_primary
+    m_breasts_pair_9_FRONT_secondary: m_breasts_pair_9_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_9_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_9_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_9_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_9_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts10
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_10_FRONT_primary: Genital
+    m_breasts_pair_10_FRONT_secondary: Genital
+    m_breasts_pair_10_BEHIND_primary: TailBehind
+    m_breasts_pair_10_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_10_FRONT_primary: m_breasts_pair_10_BEHIND_primary
+    m_breasts_pair_10_FRONT_secondary: m_breasts_pair_10_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_10_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_10_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_10_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_10_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts11
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_11_FRONT_primary: Genital
+    m_breasts_pair_11_FRONT_secondary: Genital
+    m_breasts_pair_11_BEHIND_primary: TailBehind
+    m_breasts_pair_11_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_11_FRONT_primary: m_breasts_pair_11_BEHIND_primary
+    m_breasts_pair_11_FRONT_secondary: m_breasts_pair_11_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_11_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_11_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_11_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_11_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts12
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_12_FRONT_primary: Genital
+    m_breasts_pair_12_FRONT_secondary: Genital
+    m_breasts_pair_12_BEHIND_primary: TailBehind
+    m_breasts_pair_12_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_12_FRONT_primary: m_breasts_pair_12_BEHIND_primary
+    m_breasts_pair_12_FRONT_secondary: m_breasts_pair_12_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_12_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_12_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_12_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_12_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts13
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_13_FRONT_primary: Genital
+    m_breasts_pair_13_FRONT_secondary: Genital
+    m_breasts_pair_13_BEHIND_primary: TailBehind
+    m_breasts_pair_13_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_13_FRONT_primary: m_breasts_pair_13_BEHIND_primary
+    m_breasts_pair_13_FRONT_secondary: m_breasts_pair_13_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_13_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_13_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_13_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_13_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts14
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_14_FRONT_primary: Genital
+    m_breasts_pair_14_FRONT_secondary: Genital
+    m_breasts_pair_14_BEHIND_primary: TailBehind
+    m_breasts_pair_14_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_14_FRONT_primary: m_breasts_pair_14_BEHIND_primary
+    m_breasts_pair_14_FRONT_secondary: m_breasts_pair_14_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_14_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_14_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_14_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_14_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts15
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_15_FRONT_primary: Genital
+    m_breasts_pair_15_FRONT_secondary: Genital
+    m_breasts_pair_15_BEHIND_primary: TailBehind
+    m_breasts_pair_15_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_15_FRONT_primary: m_breasts_pair_15_BEHIND_primary
+    m_breasts_pair_15_FRONT_secondary: m_breasts_pair_15_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_15_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_15_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_15_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_15_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts16
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_16_FRONT_primary: Genital
+    m_breasts_pair_16_FRONT_secondary: Genital
+    m_breasts_pair_16_BEHIND_primary: TailBehind
+    m_breasts_pair_16_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_16_FRONT_primary: m_breasts_pair_16_BEHIND_primary
+    m_breasts_pair_16_FRONT_secondary: m_breasts_pair_16_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_16_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_16_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_16_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_16_BEHIND_secondary
+
+
+- type: marking
+  id: PSGenitalBreasts17
+  bodyPart: Genital
+  markingCategory: Genital
+  speciesRestriction: [Vulpkanin, Rodentia, SlimePerson, Human, Harpy, IPC, Arachne, Felinid, Oni, Kitsune]
+  kindAllowance: [BasicHumanlike, BasicFurry, Resomi, VoxLike]
+  layering:
+    m_breasts_pair_17_FRONT_primary: Genital
+    m_breasts_pair_17_FRONT_secondary: Genital
+    m_breasts_pair_17_BEHIND_primary: TailBehind
+    m_breasts_pair_17_BEHIND_secondary: TailBehind
+  colorLinks:
+    m_breasts_pair_17_FRONT_primary: m_breasts_pair_17_BEHIND_primary
+    m_breasts_pair_17_FRONT_secondary: m_breasts_pair_17_BEHIND_secondary
+  sprites:
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_17_FRONT_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_17_FRONT_secondary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_17_BEHIND_primary
+  - sprite: _PS/Mobs/Customization/Markings/Genital/breasts.rsi
+    state: m_breasts_pair_17_BEHIND_secondary
