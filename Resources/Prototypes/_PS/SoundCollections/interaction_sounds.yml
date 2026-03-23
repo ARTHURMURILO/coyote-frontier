@@ -1,0 +1,8 @@
+- type: soundCollection
+  id: KissSounds
+  files:
+  - /Audio/_PS/Interaction/Kiss/kiss1.ogg
+  - /Audio/_PS/Interaction/Kiss/kiss2.ogg
+  - /Audio/_PS/Interaction/Kiss/kiss3.ogg
+  - /Audio/_PS/Interaction/Kiss/kiss4.ogg
+  - /Audio/_PS/Interaction/Kiss/kiss5.ogg

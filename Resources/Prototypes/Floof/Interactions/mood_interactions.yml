@@ -18,7 +18,8 @@
 #    effect: BeingKissed
   effectSuccess:
     popup: Obvious
-    sound: {path: /Audio/Floof/Lewd/kiss.ogg}
+    sound:
+      collection: KissSounds
 
 - type: Interaction
   id: Lick
