@@ -1,0 +1,56 @@
+- type: entity
+  parent: PoweredStrobeLightEmpty
+  id: PoweredStrobeRedAlert
+  suffix: "Red Alert"
+  components:
+  - type: PointLight
+    enabled: true
+    energy: 5.0
+    radius: 12
+    softness: 1.1
+  - type: PoweredLight
+    hasLampOnSpawn: LightBulbCrystalRed
+
+- type: entity
+  id: PoweredStrobeLightTOSRedAlert
+  suffix: "TOS Red Alert"
+  parent: PoweredStrobeRedAlert
+  components:
+  - type: AmbientSound
+    volume: 0
+    range: 12
+    sound:
+      path: "/Audio/_PS/Effects/Lightning/TOSRedAlert.ogg"
+
+- type: entity
+  id: PoweredStrobeLightVOYRedAlert
+  suffix: "VOY Red Alert"
+  parent: PoweredStrobeRedAlert
+  components:
+  - type: AmbientSound
+    volume: 0
+    range: 12
+    sound:
+      path: "/Audio/_PS/Effects/Lightning/VOYRedAlert.ogg"
+
+- type: entity
+  id: PoweredStrobeLightNCPD
+  suffix: "NFSD"
+  parent: PoweredStrobeRedAlert
+  components:
+  - type: AmbientSound
+    volume: -5
+    range: 12
+    sound:
+      path: "/Audio/_PS/Effects/Lightning/NCPD.ogg"
+
+- type: entity
+  id: PoweredStrobeLightMaxTac
+  suffix: "MaxTac"
+  parent: PoweredStrobeRedAlert
+  components:
+  - type: AmbientSound
+    volume: -5
+    range: 12
+    sound:
+      path: "/Audio/_PS/Effects/Lightning/MaxTac.ogg"
