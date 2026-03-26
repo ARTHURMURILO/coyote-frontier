@@ -1,0 +1,36 @@
+
+- type: vessel
+  id: Cauterizer
+  parent: BaseVessel
+  name: FSB Cauterizer
+  description: A small paramedical shuttle with heavy armor and armaments, originally designed to be used by military paramedics.
+  price: 75000
+  category: Small
+  group: Medical
+  shuttlePath: /Maps/_PS/Shuttles/cauterizer.yml
+  guidebookPage: ShipyardCauterizer
+  class:
+  - Medical
+  engine:
+  - Solar
+
+- type: gameMap
+  id: Cauterizer
+  mapName: 'FSB Cauterizer'
+  mapPath: /Maps/_PS/Shuttles/cauterizer.yml
+  minPlayers: 0
+  stations:
+    Cauterizer:
+      stationProto: StandardFrontierVessel
+      components:
+      - type: StationNameSetup
+        mapNameTemplate: 'Cauterizer {1}'
+        nameGenerator:
+          !type:NanotrasenNameGenerator
+          prefixCreator: '14'
+      - type: StationJobs
+        availableJobs:
+          ContractorInterview: [ 2, 2 ]
+          CompanionInterview: [ 2, 2 ]
+          PilotInterview: [ 2, 2 ]
+          MercenaryInterview: [ 2, 2 ]
