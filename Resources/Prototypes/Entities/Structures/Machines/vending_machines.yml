@@ -249,8 +249,8 @@
       shader: unshaded
     - state: panel
       map: ["enum.WiresVisualLayers.MaintenancePanel"]
-  - type: AccessReader
-    access: [["SyndicateAgent"]]
+  #- type: AccessReader # Coyote
+  #  access: [["SyndicateAgent"]] # Coyote
   - type: GuideHelp
     guides:
     - Bartender
@@ -2243,5 +2243,5 @@
     normalState: normal
     denyState: deny
     ejectDelay: 2
-  - type: AccessReader
-    access: [["SyndicateAgent"]]
+  #- type: AccessReader # Coyote
+  #  access: [["SyndicateAgent"]] # Coyote

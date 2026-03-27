@@ -87,17 +87,14 @@
         whitelist:
           components:
             - FitsInDispenser
-  - type: ItemToggle
-  - type: HealthAnalyzer
-    scanDelay: 0
   - type: UserInterface
     interfaces:
-      enum.HealthAnalyzerUiKey.Key:
-        type: HealthAnalyzerBoundUserInterface
+      enum.CryoPodUiKey.Key:
+        type: CryoPodBoundUserInterface
       enum.WiresUiKey.Key:
         type: WiresBoundUserInterface
   - type: ActivatableUI
-    key: enum.HealthAnalyzerUiKey.Key
+    key: enum.CryoPodUiKey.Key
     requiresComplex: false
   - type: ActivatableUIRequiresPower
   - type: PointLight
@@ -108,6 +105,10 @@
   - type: EmptyOnMachineDeconstruct
     containers:
       - scanner-body
+  - type: SolutionContainerManager
+    solutions:
+      injectionBuffer:
+        maxVol: 50
   - type: CryoPod
   - type: CryoPodAir
   - type: ContainerTemperatureDamageThresholds
@@ -115,6 +116,10 @@
   - type: GuideHelp
     guides:
     - Cryogenics
+  # # Coyote: Lets cryo pods fuckin. print slips. why not
+  # - type: HealthAnalyzerPrinter
+  #   printTemplate: PaperWrittenMedicalMedtekPatientRecord
+  # # End Coyote
 
 - type: entity
   parent: BaseMachine

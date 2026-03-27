@@ -16,6 +16,7 @@
   alwaysUseSpawner: true
   hideConsoleVisibility: true
   canBeAntag: true
+  consoleAdjustable: false
   icon: "JobIconNFPirate"
   supervisors: job-supervisors-nf-pirate
   weight: 20

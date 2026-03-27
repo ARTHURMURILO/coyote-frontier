@@ -4,6 +4,7 @@ using Content.Server.Humanoid;
 using Content.Shared.Body.Components;
 using Content.Shared.Body.Part;
 using Content.Shared.Body.Systems;
+using Content.Shared.Damage.Components;
 using Content.Shared.Humanoid;
 using Content.Shared.Mind;
 using Content.Shared.Mobs.Systems;
@@ -12,7 +13,7 @@ using Content.Shared.Movement.Systems;
 using Robust.Shared.Audio;
 using Robust.Shared.Timing;
 using System.Numerics;
-using Content.Shared.Damage.Components;
+using Content.Shared.Body.Events;
 
 namespace Content.Server.Body.Systems;
 

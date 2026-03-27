@@ -16,6 +16,7 @@
   alwaysUseSpawner: true
   hideConsoleVisibility: true
   canBeAntag: true
+  consoleAdjustable: false
   icon: "JobIconPilot"
   supervisors: job-supervisors-freebooters-union
   weight: 20

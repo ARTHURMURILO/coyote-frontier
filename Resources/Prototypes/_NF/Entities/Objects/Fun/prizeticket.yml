@@ -269,6 +269,11 @@
       - id: PlushieAbductorAgent
         prob: 0.20
         orGroup: Prize
+      # Coyote Start
+      - id: PlushieVoid
+        prob: 0.20
+        orGroup: Prize
+      # Coyote End
   - type: StaticPrice
     price: 20
     vendPrice: 500

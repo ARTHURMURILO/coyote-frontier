@@ -196,6 +196,13 @@ namespace Content.Shared.Roles
         [DataField]
         public float RolePlayIncentiveMultiplier = 1.0f;
 
+        /// <summary>
+        /// Whether or not the job slots can be adjusted by the station jobs console
+        /// WE HAVE ENOUGH MURDERPROSTITUTES, PLAY A RESIDENT
+        /// </summary>
+        [DataField("consoleAdjustable")]
+        public bool ConsoleAdjustable = true;
+
     }
 
     /// <summary>

@@ -15,6 +15,7 @@
   weight: 70
   displayWeight: 10
   canBeAntag: false
+  consoleAdjustable: false
   accessGroups:
   - CadetNfsdAccess
   special:

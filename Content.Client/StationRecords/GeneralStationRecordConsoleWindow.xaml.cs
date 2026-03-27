@@ -5,7 +5,9 @@ using Robust.Client.UserInterface.XAML;
 using Robust.Shared.Prototypes; // Frontier
 using Content.Shared.Roles; // Frontier
 using Robust.Shared.Utility; // Frontier
-using Content.Client._NF.StationRecords; // Frontier
+using Content.Client._NF.StationRecords;
+using Content.Shared._Coyote;
+using Robust.Client.Player; // Frontier
 
 namespace Content.Client.StationRecords;
 
@@ -222,23 +224,50 @@ public sealed partial class GeneralStationRecordConsoleWindow : DefaultWindow
         foreach (var (job, amount) in jobList)
         {
             // Skip overflow jobs.
-            if (amount < 0 || amount is null)
+            if (amount is < 0 or null)
                 continue;
+
+            // get current player entity
+            EntityUid? player = IoCManager.Resolve<IPlayerManager>().LocalSession?.AttachedEntity;
+            bool amAghost = player != null && IoCManager.Resolve<IEntityManager>().HasComponent<AdminGhostComponent>(player.Value);
+            bool canAdjust;
 
             // Get proper job names when possible
             string jobName;
             if (_prototype.TryIndex(job, out var jobProto))
+            {
                 jobName = jobProto.LocalizedName;
+                canAdjust = jobProto.ConsoleAdjustable || amAghost; // Aghosts can adjust all jobs, cus we're admin ghosts~
+            }
             else
+            {
                 jobName = job;
+                canAdjust = false;
+            }
 
             var jobEntry = new JobRow()
             {
                 JobName = { Text = jobName },
                 JobAmount = { Text = amount.ToString() },
             };
-            jobEntry.DecreaseJobSlot.OnPressed += (args) => { OnJobSubtract?.Invoke(job); };
-            jobEntry.IncreaseJobSlot.OnPressed += (args) => { OnJobAdd?.Invoke(job); };
+
+            if (canAdjust)
+            {
+                jobEntry.IncreaseJobSlot.Visible  = true;
+                jobEntry.DecreaseJobSlot.Visible  = true;
+                jobEntry.IncreaseJobSlot.Disabled = false;
+                jobEntry.DecreaseJobSlot.Disabled = false;
+                jobEntry.DecreaseJobSlot.OnPressed += (args) => { OnJobSubtract?.Invoke(job); };
+                jobEntry.IncreaseJobSlot.OnPressed += (args) => { OnJobAdd?.Invoke(job); };
+            }
+            else
+            {
+                jobEntry.IncreaseJobSlot.Visible  = false;
+                jobEntry.DecreaseJobSlot.Visible  = false;
+                jobEntry.IncreaseJobSlot.Disabled = true;
+                jobEntry.DecreaseJobSlot.Disabled = true;
+            }
+
             JobListing.AddChild(jobEntry);
         }
     }

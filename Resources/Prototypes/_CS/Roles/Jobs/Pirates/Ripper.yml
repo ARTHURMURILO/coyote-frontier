@@ -18,6 +18,7 @@
   alwaysUseSpawner: true
   hideConsoleVisibility: true
   canBeAntag: true
+  consoleAdjustable: false
   icon: "JobIconMedicalIntern"
   supervisors: job-supervisors-freebooters-union
   weight: 40

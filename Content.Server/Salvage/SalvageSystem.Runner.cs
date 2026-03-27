@@ -29,6 +29,7 @@ using Content.Shared.Damage.Prototypes;
 using Content.Shared.EntityEffects;
 using Content.Shared.Mind.Components;
 using Content.Shared.Salvage;
+using Content.Shared.Silicons.Borgs.Components;
 using Content.Shared.Warps;
 using Robust.Server.Player;
 using Robust.Shared.Audio;
@@ -526,6 +527,8 @@ public sealed partial class SalvageSystem
     /// </summary>
     private void TendToDork(EntityUid mobUid)
     {
+        if (HasComp<BorgBrainComponent>(mobUid))
+            return; // dont hurt borgs, theyre already dead or something
         if (_mobState.IsAlive(mobUid))
         {
             // hey you're alive! stop that!
@@ -555,7 +558,7 @@ public sealed partial class SalvageSystem
         // fire sucks, i hate this game
         var ev = new ExtinguishEvent
         {
-            FireStacksAdjustment = 1000,
+            FireStacksAdjustment = -1000,
         };
         RaiseLocalEvent(mobUid, ref ev);
         if (TryComp<DamageableComponent>(mobUid, out var damageable)
@@ -685,13 +688,11 @@ public sealed partial class SalvageSystem
 
         var query =
             EntityQueryEnumerator<
-                HumanoidAppearanceComponent,
                 MindContainerComponent,
                 TransformComponent>();
         HashSet<EntityUid> pplOnThisExped = new();
         while (query.MoveNext(
                    out var uid,
-                   out _,
                    out var mindC,
                    out var xform))
         {
@@ -719,6 +720,12 @@ public sealed partial class SalvageSystem
             // if they are dead, remove them from the list and keep checking
             if (_mobState.IsDead(uid, mobState))
                 pplOnThisExped.Remove(uid);
+            // if... a darn posibrain...
+            if (TryComp<BorgBrainComponent>(uid, out var bbrain))
+            {
+                // borgs just kinda.. leave behind brains when they die
+                pplOnThisExped.Remove(uid); // so theyre dead or something
+            }
         }
         // if anyone is left, abort is not necessary
         if (pplOnThisExped.Count > 0)

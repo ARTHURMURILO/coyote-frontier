@@ -12,6 +12,7 @@
   startingGear: PublicAffairGear
   icon: "JobIconPublicAffairsLiaison"
   supervisors: job-supervisors-cadet
+  consoleAdjustable: false
   canBeAntag: false
   weight: 105
   displayWeight: 16

@@ -25,6 +25,10 @@
     PlushieDave: 3
     PlushieGoblin: 3
     PlasticBanana: 3
+    #Coyote Start
+    PlushieVoid: 3
+    Clicker: 3 # Coyote Sector
+    #Coyote End
     BeachBall: 3
     Basketball: 3
     Football: 3
@@ -40,7 +44,6 @@
     PonderingOrb: 1
     CrayonBox: 10
     CrayonRainbow: 5
-    Clicker: 3 # Coyote Sector
     WeaponWaterPistol: 8
     WeaponWaterBlaster: 4
     TargetDartsFlatpack: 1

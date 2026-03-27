@@ -130,6 +130,7 @@
       - id: MonkananaSeeds
       - id: GatfruitSeeds # Coyote
       - id: BreedShroomSeeds # Coyote
+      - id: AmbrosiaVitalisSeeds # Coyote
 
 # region Cemicals
 - type: entityTable

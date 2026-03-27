@@ -68,9 +68,9 @@
   parent: BaseHealingItem
   id: RepairSpray
   components:
-#  - type: Tag
-#    tags:
-#    - Brutepack
+  - type: Tag
+    tags:
+    - Ointment
   - type: Sprite
     sprite: _CS/Objects/Specific/Medical/robotopicals.rsi
     state: robofoam
@@ -95,7 +95,7 @@
         Shock: -45
         Bloodloss: -30
     bloodlossModifier: -10 # stops bleeding
-    ModifyBloodLevel: 50 # restores a lot of internal fluid
+    modifyBloodLevel: 50 # restores a lot of internal fluid
     healingBeginSound:
       path: "/Audio/Items/canopen.ogg"
       params:
@@ -135,7 +135,7 @@
         Radiation: -250
         Bloodloss: -600
     bloodlossModifier: -25
-    ModifyBloodLevel: 90
+    modifyBloodLevel: 90
 
 - type: entity
   name: synthetic emergency auto-injector

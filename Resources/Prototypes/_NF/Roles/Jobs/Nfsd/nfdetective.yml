@@ -15,6 +15,7 @@
   weight: 110
   displayWeight: 20
   canBeAntag: false
+  consoleAdjustable: false
   access:
   - Detective
   accessGroups:

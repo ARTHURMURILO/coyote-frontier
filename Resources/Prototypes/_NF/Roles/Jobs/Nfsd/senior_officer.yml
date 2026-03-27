@@ -17,6 +17,7 @@
   weight: 140
   displayWeight: 50
   canBeAntag: false
+  consoleAdjustable: false
   access: # Access was editted by Coyote
   - HeadOfSecurity
   - Command

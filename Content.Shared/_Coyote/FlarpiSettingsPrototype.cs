@@ -42,6 +42,12 @@ public sealed partial class FlarpiSettingsPrototype : IPrototype
     public int BaseFlarpi { get; set; } = 1; // 1000 points / 3600 seconds
 
     /// <summary>
+    /// Linear flarpi increase rate, if linear scaling is enabled
+    /// </summary>
+    [DataField("linearFlarpiIncrease")]
+    public int LinearFlarpiIncrease { get; set; } = 1;
+
+    /// <summary>
     /// The radius to check for nearby freelancers.
     /// </summary>
     [DataField("nearbyRadius")]
@@ -120,12 +126,6 @@ public enum FlarpiCalculationMode
     /// X * N
     /// </summary>
     Linear,
-
-    /// <summary>
-    /// Linear, but double the effect
-    /// (X * 2) * N
-    /// </summary>
-    LinearDoubled,
 
     /// <summary>
     /// Doubling scaling

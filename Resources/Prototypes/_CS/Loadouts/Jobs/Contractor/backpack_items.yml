@@ -17,3 +17,18 @@
   storage:
     back:
     - AccessConfiguratorCivilian
+
+# Flasks:
+- type: loadout
+  id: ContractorDrinkFlaskBar
+  price: 530
+  storage:
+    back:
+    - DrinkFlaskBar
+
+- type: loadout
+  id: ContractorDrinkMREFlask
+  price: 730
+  storage:
+    back:
+    - DrinkMREFlask

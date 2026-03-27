@@ -45,8 +45,8 @@
           orGroup: deposit
         - id: GasDepositPlasma
           orGroup: deposit
-        - id: GasDepositAir
-          orGroup: deposit
+        #- id: GasDepositAir # Coyote: Disable air deposits
+        #  orGroup: deposit
         - id: GasDepositMuddleEven
           orGroup: deposit
         - id: GasDepositMuddlePlasma
@@ -102,10 +102,10 @@
           orGroup: deposit
         - id: GasDepositNitrogenLarge
           orGroup: deposit
-        - id: GasDepositAir
-          orGroup: deposit
-        - id: GasDepositAirLarge
-          orGroup: deposit
+        #- id: GasDepositAir # Coyote: Disable air deposits
+        #  orGroup: deposit
+        #- id: GasDepositAirLarge # Coyote: Disable air deposits
+        #  orGroup: deposit
         - id: GasDepositWaterVaporVeryLarge
           orGroup: deposit
         - id: GasDepositWaterVaporLarge
@@ -306,8 +306,8 @@
           orGroup: deposit
         - id: GasDepositNitrogenVeryLarge
           orGroup: deposit
-        - id: GasDepositAirVeryLarge
-          orGroup: deposit
+        #- id: GasDepositAirVeryLarge # Coyote: Disable air deposits
+        #  orGroup: deposit
 # endregion Chromite Table
 
 # region AsteroidRock Table
@@ -353,8 +353,8 @@
           orGroup: deposit
         - id: GasDepositCarbonDioxideSmall
           orGroup: deposit
-        - id: GasDepositAirSmall
-          orGroup: deposit
+        #- id: GasDepositAirSmall # Coyote: Disable air deposits
+        #  orGroup: deposit
         - id: GasDepositHelium
           orGroup: deposit
 # endregion AsteroidRock Table

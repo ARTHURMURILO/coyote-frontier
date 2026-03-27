@@ -928,53 +928,53 @@
         tags:
           - SecurityUplink
 
-- type: listing
-  id: UplinkSecurityCash1000
-  name:  uplink-security-cash1000-name
-  description: uplink-security-cash1000-desc
-  productEntity: SpaceCash1000
-  icon: { sprite: Objects/Economy/cash.rsi, state: cash_1000 }
-  cost:
-    FrontierUplinkCoin: 1
-  categories:
-    - UplinkSecurityUtility
-  conditions:
-    - !type:StoreWhitelistCondition
-      whitelist:
-        tags:
-          - SecurityUplink
+#- type: listing
+#  id: UplinkSecurityCash1000
+#  name:  uplink-security-cash1000-name
+#  description: uplink-security-cash1000-desc
+#  productEntity: SpaceCash1000
+#  icon: { sprite: Objects/Economy/cash.rsi, state: cash_1000 }
+#  cost:
+#    FrontierUplinkCoin: 1
+#  categories:
+#    - UplinkSecurityUtility
+#  conditions:
+#    - !type:StoreWhitelistCondition
+#      whitelist:
+#        tags:
+#          - SecurityUplink
 
-- type: listing #coyote offering better selling options
-  id: UplinkSecurityCash10000
-  name:  uplink-security-cash10000-name
-  description: uplink-security-cash10000-desc
-  productEntity: SpaceCash10000
-  icon: { sprite: Objects/Economy/cash.rsi, state: cash_10000 }
-  cost:
-    FrontierUplinkCoin: 10 # bulk sell fucs
-  categories:
-    - UplinkSecurityUtility
-  conditions:
-    - !type:StoreWhitelistCondition
-      whitelist:
-        tags:
-          - SecurityUplink
+#- type: listing #coyote offering better selling options
+#  id: UplinkSecurityCash10000
+#  name:  uplink-security-cash10000-name
+#  description: uplink-security-cash10000-desc
+#  productEntity: SpaceCash10000
+#  icon: { sprite: Objects/Economy/cash.rsi, state: cash_10000 }
+#  cost:
+#    FrontierUplinkCoin: 10 # bulk sell fucs
+#  categories:
+#    - UplinkSecurityUtility
+#  conditions:
+#    - !type:StoreWhitelistCondition
+#      whitelist:
+#        tags:
+#          - SecurityUplink
 
-- type: listing #coyote offering better selling options
-  id: UplinkSecurityCash100000
-  name:  uplink-security-cash100000-name
-  description: uplink-security-cash100000-desc
-  productEntity: SpaceCash100000
-  icon: { sprite: Objects/Economy/cash.rsi, state: cash_100000 }
-  cost:
-    FrontierUplinkCoin: 100 # bulk sell fucs
-  categories:
-    - UplinkSecurityUtility
-  conditions:
-    - !type:StoreWhitelistCondition
-      whitelist:
-        tags:
-          - SecurityUplink
+#- type: listing #coyote offering better selling options
+#  id: UplinkSecurityCash100000
+#  name:  uplink-security-cash100000-name
+#  description: uplink-security-cash100000-desc
+#  productEntity: SpaceCash100000
+#  icon: { sprite: Objects/Economy/cash.rsi, state: cash_100000 }
+#  cost:
+#    FrontierUplinkCoin: 100 # bulk sell fucs
+#  categories:
+#    - UplinkSecurityUtility
+#  conditions:
+#    - !type:StoreWhitelistCondition
+#      whitelist:
+#        tags:
+#          - SecurityUplink
 
 - type: listing # Coyote removed job restrictions from this gear
   id: UplinkSecurityEmpGrenadeBox

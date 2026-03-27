@@ -13,9 +13,9 @@
 - type: vessel
   id: Pathfinder
   parent: BaseVessel
-  name: LL1 Pathfinder
+  name: LL1 KC Pathfinder
   description: Once a scout ship serving with the Nanotrasen Marine Expeditionary Forces, this now decommissioned expedition capable ship can be yours!
-  price: 95750 #29997, +50k(exped) LL1 x1.2 = 95996
+  price: 105000 #34200, +50k(exped) LL1 x1.2 = 101040, but let's round it to make it prettier.
   category: Small
   group: Expedition
   shuttlePath: /Maps/_NF/Shuttles/Expedition/pathfinder.yml
@@ -27,7 +27,7 @@
 
 - type: gameMap
   id: Pathfinder
-  mapName: 'Pathfinder'
+  mapName: 'KC Pathfinder'
   mapPath: /Maps/_NF/Shuttles/Expedition/pathfinder.yml
   minPlayers: 0
   stations:

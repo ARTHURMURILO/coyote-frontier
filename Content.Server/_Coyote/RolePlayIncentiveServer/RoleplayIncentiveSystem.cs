@@ -15,6 +15,7 @@ using Content.Shared.Examine;
 using Content.Shared.FixedPoint;
 using Content.Shared.Ghost;
 using Content.Shared.Hands.EntitySystems;
+using Content.Shared.Mind.Components;
 using Content.Shared.Mobs;
 using Content.Shared.Mobs.Components;
 using Content.Shared.Mobs.Systems;
@@ -79,8 +80,11 @@ public sealed class RoleplayIncentiveSystem : EntitySystem
 
     private List<RpiContinuousProxyActionPrototype> AllContinuousProxies = new();
 
-    private TimeSpan DeathPunishmentCooldown = TimeSpan.FromMinutes(30);
-    private TimeSpan DeepFryerPunishmentCooldown = TimeSpan.FromMinutes(5); // please stop deep frying tesharis
+    private readonly TimeSpan DeathPunishmentCooldown = TimeSpan.FromMinutes(30);
+    private readonly TimeSpan DeepFryerPunishmentCooldown = TimeSpan.FromMinutes(5); // please stop deep frying tesharis
+
+    private readonly TimeSpan SystemCheckInterval = TimeSpan.FromSeconds(0.5);
+    private TimeSpan NextSystemCheck = TimeSpan.Zero;
 
     /// <inheritdoc/>
     public override void Initialize()
@@ -819,6 +823,11 @@ public sealed class RoleplayIncentiveSystem : EntitySystem
     {
         base.Update(frameTime);
 
+        // just so it doesnt run every single frame
+        if (_timing.CurTime < NextSystemCheck)
+            return;
+        NextSystemCheck = _timing.CurTime + SystemCheckInterval;
+
         var query = EntityQueryEnumerator<RoleplayIncentiveComponent>();
         while (query.MoveNext(out var uid, out var rpic))
         {
@@ -1470,6 +1479,8 @@ public sealed class RoleplayIncentiveSystem : EntitySystem
             return false;
         if (!PlayerIsAlive(uid))
             return false;
+        if (PlayerIsInCryo(uid))
+            return false;
         return true;
     }
 
@@ -1491,6 +1502,11 @@ public sealed class RoleplayIncentiveSystem : EntitySystem
             SessionStatus.Connected or SessionStatus.InGame or SessionStatus.Connecting => true,
             _ => false,
         };
+    }
+
+    public bool PlayerIsInCryo(EntityUid uid)
+    {
+        return TryComp<MindContainerComponent>(uid, out var mindCon) && mindCon.IsInCryosleep;
     }
 
     #endregion
@@ -1521,6 +1537,10 @@ public sealed class RoleplayIncentiveSystem : EntitySystem
         if (_timing.CurTime < myFlarpy.LastFlarpiCheck + myFlarpy.FlarpiCheckInterval)
             return; // too soon to check again
         TimeSpan timeSinceLastCheck = _timing.CurTime - myFlarpy.LastFlarpiCheck;
+        // cap the time since last check to to... 5 times the check interval
+        // Allows for lag comp, but also prevents people from cryoing and coming back with LOTSA CASH
+        if (timeSinceLastCheck > myFlarpy.FlarpiCheckInterval * 5)
+            timeSinceLastCheck = myFlarpy.FlarpiCheckInterval * 5;
         myFlarpy.LastFlarpiCheck = _timing.CurTime;
 
         // FLARPI CALC
@@ -1558,13 +1578,10 @@ public sealed class RoleplayIncentiveSystem : EntitySystem
             switch (flarpiProto.FreelancerCalculationMode)
             {
                 case FlarpiCalculationMode.Linear:
-                    flarpiPerHour += flarpiProto.BaseFlarpi * freelancersNearby;
+                    flarpiPerHour += flarpiProto.LinearFlarpiIncrease * freelancersNearby;
                     break;
                 case FlarpiCalculationMode.Doubling:
                     flarpiPerHour *= (decimal)Math.Pow(2, freelancersNearby);
-                    break;
-                case FlarpiCalculationMode.LinearDoubled:
-                    flarpiPerHour += flarpiProto.BaseFlarpi * 2 * freelancersNearby;
                     break;
                 case FlarpiCalculationMode.Nope:
                     break;
@@ -1594,13 +1611,10 @@ public sealed class RoleplayIncentiveSystem : EntitySystem
             switch (flarpiProto.NfsdCalculationMode)
             {
                 case FlarpiCalculationMode.Linear:
-                    flarpiPerHour += flarpiProto.BaseFlarpi * nfsdNearby;
+                    flarpiPerHour += flarpiProto.LinearFlarpiIncrease * nfsdNearby;
                     break;
                 case FlarpiCalculationMode.Doubling:
                     flarpiPerHour *= (decimal)Math.Pow(2, nfsdNearby);
-                    break;
-                case FlarpiCalculationMode.LinearDoubled:
-                    flarpiPerHour += flarpiProto.BaseFlarpi * 2 * nfsdNearby;
                     break;
                 case FlarpiCalculationMode.Nope:
                     break;

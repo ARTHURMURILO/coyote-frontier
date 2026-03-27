@@ -507,80 +507,80 @@
     whitelist:
     - RipperDoc
 
-- type: listing
-  id: UplinkFreelancerCash5000
-  name: uplink-security-cash5000-name
-  description: uplink-security-cash5000-desc
-  productEntity: SpaceCash5000
-  cost:
-    Doubloon: 1
-  categories:
-  - UplinkPirateUtility
-  conditions:
-  - !type:StoreWhitelistCondition
-    whitelist:
-      tags:
-      - PirateUplink
+#- type: listing
+#  id: UplinkFreelancerCash5000
+#  name: uplink-security-cash5000-name
+#  description: uplink-security-cash5000-desc
+#  productEntity: SpaceCash5000
+#  cost:
+#    Doubloon: 1
+#  categories:
+#  - UplinkPirateUtility
+#  conditions:
+#  - !type:StoreWhitelistCondition
+#    whitelist:
+#      tags:
+#      - PirateUplink
 
-- type: listing
-  id: UplinkFreelancerCash10000
-  name: uplink-security-cash10000-name
-  description: uplink-security-cash5000-desc
-  productEntity: SpaceCash10000
-  cost:
-    Doubloon: 2
-  categories:
-  - UplinkPirateUtility
-  conditions:
-  - !type:StoreWhitelistCondition
-    whitelist:
-      tags:
-      - PirateUplink
+#- type: listing
+#  id: UplinkFreelancerCash10000
+#  name: uplink-security-cash10000-name
+#  description: uplink-security-cash5000-desc
+#  productEntity: SpaceCash10000
+#  cost:
+#    Doubloon: 2
+#  categories:
+#  - UplinkPirateUtility
+#  conditions:
+#  - !type:StoreWhitelistCondition
+#    whitelist:
+#      tags:
+#      - PirateUplink
 
-- type: listing
-  id: UplinkFreelancerCash20000
-  name: uplink-security-cash20000-name
-  description: uplink-security-cash5000-desc
-  productEntity: SpaceCash20000
-  cost:
-    Doubloon: 4
-  categories:
-  - UplinkPirateUtility
-  conditions:
-  - !type:StoreWhitelistCondition
-    whitelist:
-      tags:
-      - PirateUplink
+#- type: listing
+#  id: UplinkFreelancerCash20000
+#  name: uplink-security-cash20000-name
+#  description: uplink-security-cash5000-desc
+#  productEntity: SpaceCash20000
+#  cost:
+#    Doubloon: 4
+#  categories:
+#  - UplinkPirateUtility
+#  conditions:
+#  - !type:StoreWhitelistCondition
+#    whitelist:
+#      tags:
+#      - PirateUplink
 
-- type: listing
-  id: UplinkFreelancerCash30000
-  name: uplink-security-cash30000-name
-  description: uplink-security-cash5000-desc
-  productEntity: SpaceCash30000
-  cost:
-    Doubloon: 6
-  categories:
-  - UplinkPirateUtility
-  conditions:
-  - !type:StoreWhitelistCondition
-    whitelist:
-      tags:
-      - PirateUplink
+#- type: listing
+#  id: UplinkFreelancerCash30000
+#  name: uplink-security-cash30000-name
+#  description: uplink-security-cash5000-desc
+#  productEntity: SpaceCash30000
+#  cost:
+#    Doubloon: 6
+#  categories:
+#  - UplinkPirateUtility
+#  conditions:
+#  - !type:StoreWhitelistCondition
+#    whitelist:
+#      tags:
+#      - PirateUplink
 
-- type: listing
-  id: UplinkFreelancerCash100000
-  name: uplink-security-cash100000-name
-  description: uplink-security-cash5000-desc
-  productEntity: SpaceCash100000
-  cost:
-    Doubloon: 20
-  categories:
-  - UplinkPirateUtility
-  conditions:
-  - !type:StoreWhitelistCondition
-    whitelist:
-      tags:
-      - PirateUplink
+#- type: listing
+#  id: UplinkFreelancerCash100000
+#  name: uplink-security-cash100000-name
+#  description: uplink-security-cash5000-desc
+#  productEntity: SpaceCash100000
+#  cost:
+#    Doubloon: 20
+#  categories:
+#  - UplinkPirateUtility
+#  conditions:
+#  - !type:StoreWhitelistCondition
+#    whitelist:
+#      tags:
+#      - PirateUplink
 
 - type: listing
   id: UplinkFreelancerStimkit
@@ -1636,3 +1636,40 @@
   - !type:BuyerJobCondition
     whitelist:
     - Escort
+
+- type: listing
+  id: PirateUplinkChameleonProjector
+  name:  uplink-chameleon-projector-name
+  description: uplink-chameleon-projector-desc
+  productEntity: ChameleonProjector
+  icon: { sprite: Objects/Devices/chameleon_projector.rsi, state: icon }
+  cost:
+    Doubloon: 30
+  categories:
+    - UplinkPirateDeception
+  conditions:
+    - !type:StoreWhitelistCondition
+      whitelist:
+        tags:
+          - PirateUplink
+    - !type:BuyerJobCondition
+      whitelist:
+      - Escort
+
+- type: listing
+  id: PirateUplinkStealthBox
+  name:  uplink-stealth-box-name
+  description: uplink-stealth-box-desc
+  productEntity: StealthBox
+  cost:
+    Doubloon: 16
+  categories:
+    - UplinkPirateDeception
+  conditions:
+    - !type:StoreWhitelistCondition
+      whitelist:
+        tags:
+          - PirateUplink
+    - !type:BuyerJobCondition
+      whitelist:
+      - Escort

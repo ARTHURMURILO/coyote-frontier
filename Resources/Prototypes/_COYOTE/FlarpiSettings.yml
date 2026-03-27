@@ -4,6 +4,7 @@
   flarpiCurrencyPrototype: Doubloon
   flarpiName: freelancer
   baseFlarpi: 5
+  linearFlarpiIncrease: 2
   nearbyRadius: 25
   freelancerCountMode: Nearby
   freelancerCalcMode: Linear
@@ -17,10 +18,11 @@
   pointsPerFlarpi: 1000
   flarpiName: nfsd
   baseFlarpi: 5
+  linearFlarpiIncrease: 2
   nearbyRadius: 25
-  freelancerCalcMode: Linear
   freelancerCountMode: Online
+  freelancerCalcMode: Linear
   maxFreelancersConsidered: 5
-  nfsdCalcMode: Linear
   nfsdCountMode: Online
+  nfsdCalcMode: Linear
 
