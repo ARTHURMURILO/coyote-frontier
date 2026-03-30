@@ -72,7 +72,7 @@
     # Snacks
     FoodTinPeachesMaint: 8
     # Weapons
-    WeaponSizeManipulator: 5
+    # WeaponSizeManipulator: 5
   contrabandInventory:
     # Snacks
     FoodTinPeachesMaint: 10

@@ -92,7 +92,7 @@
     # Snacks
     FoodTinPeachesMaint: 8
     # Weapons
-    WeaponSizeManipulator: 15 # Removed for rollback
+    # WeaponSizeManipulator: 15 # Removed for rollback
   contrabandInventory:
     # Coder Items
     ClothingUnderSocksCoder: 4294967295 # Infinite
