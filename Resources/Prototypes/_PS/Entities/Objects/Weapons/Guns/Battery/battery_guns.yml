@@ -17,3 +17,32 @@
     fireCost: 5
   - type: StaticPrice
     price: 90000
+
+
+- type: entity
+  id: NFWeaponEnergyPistolN1984Pulse
+  parent: [NFBaseWeaponEnergyPistolHitScanPulse, BaseWeaponPowerCellSmall, BaseC2ContrabandUnredeemable]
+  name: Pulse N1984
+  description: |-
+    A pulse variant of the N1984 usually employed by officers.
+  components:
+  - type: Sprite
+    sprite: Objects/Weapons/Guns/Pistols/N1984.rsi
+    state: base
+  - type: Clothing
+    sprite: Objects/Weapons/Guns/Pistols/N1984.rsi
+  - type: Gun
+    fireRate: 4
+    selectedMode: SemiAuto
+    availableModes:
+    - SemiAuto
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/laser3.ogg
+  - type: HitscanBatteryAmmoProvider
+    proto: PulseWeak
+    fireCost: 50
+    inhandVisuals:
+      left:
+      - state: inhand-left
+      right:
+      - state: inhand-right
