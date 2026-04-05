@@ -15,3 +15,23 @@
   - eyebrows
   - vineboom
   - vinebooms
+
+- type: emote
+  id: ScreamKeemstar
+  name: chat-emote-name-scream-keemstar
+  category: General
+  available: true
+  chatMessages: [chat-emote-msg-scream-keemstar]
+  whitelist:
+    components:
+    - Vocal
+  blacklist:
+    components:
+    - BorgChassis
+  chatTriggers:
+  - screamkeem
+  - keem
+  - keems
+  - keemstar
+  - screamkeems
+  - screamkeemstar
