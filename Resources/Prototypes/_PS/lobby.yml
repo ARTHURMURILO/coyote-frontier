@@ -1,0 +1,95 @@
+- type: lobbyBackground
+  id: SpaceCarp
+  background: /Textures/_PS/Lobby/carp.png
+
+- type: lobbyBackground
+  id: FurryChill
+  background: /Textures/_PS/Lobby/chillf.png
+
+- type: lobbyBackground
+  id: FurryMedbay
+  background: /Textures/_PS/Lobby/medf.png
+
+- type: lobbyBackground
+  id: PhilChaos
+  background: /Textures/_PS/Lobby/phil.png
+
+- type: lobbyBackground
+  id: FurryPlanet
+  background: /Textures/_PS/Lobby/planetf.png
+
+- type: lobbyBackground
+  id: FurryPlanetside
+  background: /Textures/_PS/Lobby/planetsidef.png
+
+- type: lobbyBackground
+  id: FurryMedbaySad
+  background: /Textures/_PS/Lobby/sadf.png
+
+- type: lobbyBackground
+  id: ShipSpace
+  background: /Textures/_PS/Lobby/ship.png
+
+- type: lobbyBackground
+  id: FurryShooting
+  background: /Textures/_PS/Lobby/shootingf.png
+
+- type: lobbyBackground
+  id: HeyHeyPeople
+  background: /Textures/_PS/Lobby/sseth.png
+
+- type: lobbyBackground
+  id: SyndicateArtwork
+  background: /Textures/_PS/Lobby/synd.png
+
+- type: lobbyBackground
+  id: FurryThief
+  background: /Textures/_PS/Lobby/thief.png
+
+- type: lobbyBackground
+  id: FurryWaldo
+  background: /Textures/_PS/Lobby/waldo.png
+
+- type: lobbyBackground
+  id: FurryBlackAndWhite
+  background: /Textures/_PS/Lobby/bubberstation.png
+
+- type: lobbyBackground
+  id: FurryRussianDiedOfDeath
+  background: /Textures/_PS/Lobby/diedofdeath.png
+
+- type: lobbyBackground
+  id: FurrySyndicate
+  background: /Textures/_PS/Lobby/syndf.png
+
+- type: lobbyBackground
+  id: FurryJacob
+  background: /Textures/_PS/Lobby/jacob.png
+
+- type: lobbyBackground
+  id: FurryCargo
+  background: /Textures/_PS/Lobby/cargof.png
+
+- type: lobbyBackground
+  id: FurryMiner
+  background: /Textures/_PS/Lobby/minerf.png
+
+- type: lobbyBackground
+  id: FurryishCrewp
+  background: /Textures/_PS/Lobby/crew.png
+
+- type: lobbyBackground
+  id: ShitpostOps
+  background: /Textures/_PS/Lobby/ops.png
+
+- type: lobbyBackground
+  id: LobbySyndicateWallpaper
+  background: /Textures/_PS/Lobby/syndicate.png
+
+- type: lobbyBackground
+  id: FurrySurgery
+  background: /Textures/_PS/Lobby/surgeryf.png
+
+- type: lobbyBackground
+  id: PalmShitpostCatastrophical
+  background: /Textures/_PS/Lobby/shitpost1.png
