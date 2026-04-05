@@ -1,0 +1,17 @@
+- type: entity
+  parent: NFWeaponLauncherChinaLake
+  suffix: Flash
+  id: PalmWeaponLauncherChinaLakeFlashbang
+  components:
+  - type: BallisticAmmoProvider
+    proto: PalmGrenadeFlash
+
+- type: entity
+  parent: PalmWeaponLauncherChinaLakeFlashbang
+  suffix: Flash, Admeme
+  id: PalmWeaponLauncherChinaLakeFlashbangAdmeme
+  components:
+  - type: BallisticAmmoProvider
+    proto: PalmGrenadeFlash
+    capacity: 999
+    count: 999

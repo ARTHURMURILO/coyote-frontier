@@ -1,0 +1,13 @@
+
+- type: entity
+  parent: NFBaseGrenade40mm
+  id: PalmGrenadeFlash
+  name: Flash grenade round
+  components:
+  - type: Tag
+    tags:
+    - Grenade
+    - NFCartridgeGrenade40mm
+    - NFCartridgeGrenade40mmFlash
+  - type: CartridgeAmmo
+    proto: BulletGrenadeFlashLoud

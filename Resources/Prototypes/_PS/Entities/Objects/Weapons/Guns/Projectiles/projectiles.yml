@@ -1,0 +1,9 @@
+- type: entity
+  id: BulletGrenadeFlashLoud
+  name: loud flash grenade
+  parent: BulletGrenadeFlash
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: SoundOnTrigger
+    sound:
+      path: "/Audio/_PS/Effects/Grenades/flashbang.ogg"
