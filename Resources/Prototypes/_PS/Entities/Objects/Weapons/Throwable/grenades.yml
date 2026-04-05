@@ -1,0 +1,14 @@
+- type: entity
+  name: funny flashbang
+  description: SKIBIDI BOP MM DADA-eeeeeeeeeeeeeeeeeeeeeeeeeeee
+  parent: GrenadeFlashBang
+  id: GrenadeFlashBangFunny
+  components:
+  - type: OnUseTimerTrigger
+    delay: 0.984
+  - type: SoundOnTrigger
+    sound:
+      path: "/Audio/_PS/Effects/Grenades/flashbang.ogg"
+  - type: TimerTriggerVisuals
+    primingSound:
+      path: /Audio/_PS/Effects/Grenades/skibidi.ogg
