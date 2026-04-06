@@ -1,0 +1,18 @@
+- type: entity
+  id: ActionToggleClothingConcealment
+  parent: BaseToggleAction
+  name: Toggle Concealment
+  description: Toggles the visibility of this item.
+  components:
+  - type: Action
+    useDelay: 1
+    icon: Interface/Actions/eyeclose.png
+    iconOn: Interface/Actions/eyeopen.png
+  - type: InstantAction
+    event: !type:ToggleConcealmentEvent
+
+- type: entity
+  id: ActionToggleBackpack
+  parent: ActionToggleClothingConcealment
+  name: Toggle Backpack
+  description: Toggles the display of your equipped backpack item.

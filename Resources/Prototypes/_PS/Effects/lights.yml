@@ -1,0 +1,14 @@
+- type: entity
+  id: BackpackToggleFlash
+  name: backpack flash
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: Transform
+  - type: PointLight
+    enabled: true
+    radius: 2.5
+    energy: 3
+    color: "#66CCFFFF"
+    softness: 1
+  - type: TimedDespawn
+    lifetime: 0.05

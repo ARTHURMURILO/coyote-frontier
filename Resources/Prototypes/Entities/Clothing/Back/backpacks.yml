@@ -32,6 +32,11 @@
   - type: ExplosionResistance
     damageCoefficient: 0.9
   - type: AllowsSleepInside # Frontier
+  - type: ClothingConcealment
+    requiredSlots: [back]
+    defaultConcealed: false
+    action: ActionToggleBackpack
+
 
 - type: entity
   parent: NFClothingBackpack # Frontier: ClothingBackpack<NFClothingBackpack
