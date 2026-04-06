@@ -199,8 +199,8 @@
 - type: dungeonConfig
   id: NFVGRoidExteriorDungeonsBasalt
   reserveTiles: true
-  minCount: 2
-  maxCount: 3
+  minCount: 4
+  maxCount: 5
   layers:
   - !type:ExteriorDunGen
     proto: NFLavaMercenary

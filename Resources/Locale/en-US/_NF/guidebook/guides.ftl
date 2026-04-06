@@ -126,3 +126,4 @@ guide-entry-frontier-rule-9 = 9. Security
 guide-entry-frontier-rule-10 = 10. Command
 guide-entry-frontier-rule-11 = 11. Escalation
 guide-entry-frontier-rule-12 = 12. PVP
+guide-entry-frontier-rule-13 = 13. Command

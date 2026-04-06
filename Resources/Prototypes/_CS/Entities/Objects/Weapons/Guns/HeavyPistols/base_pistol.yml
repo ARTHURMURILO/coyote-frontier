@@ -128,3 +128,15 @@
         whitelist:
           tags:
             - CSCartridgePistol40
+
+- type: entity
+  id: CSBaseWeaponFrameHeavyPistolCybersun
+  parent: [ CSBaseWeaponFrameHeavyPistol, BaseC2Contraband ]
+  abstract: true
+  components:
+  - type: Gun
+    angleIncrease: 0.9
+    angleDecay: 6.3
+    fireRate: 3.2
+  - type: NFWeaponDetails
+    manufacturer: weapon-details-manufacturer-cybersun-industries

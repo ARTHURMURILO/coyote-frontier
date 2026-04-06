@@ -462,7 +462,7 @@
         tags:
           - SecurityUplink
 
-- type: listing
+- type: listing # Coyote added bailiff and sergeant to the list of people who can get this
   id: UplinkNfsdTechfab
   name:  uplink-security-techfab-name
   description: uplink-security-techfab-desc
@@ -480,8 +480,10 @@
     - !type:BuyerJobCondition
       whitelist:
         - Sheriff
+        - Bailiff
+        - SeniorOfficer
 
-- type: listing
+- type: listing # Coyote added bailiff and sergeant to the list of people who can get this
   id: UplinkSecurityKey
   name:  uplink-security-key-name
   description: uplink-security-key-desc
@@ -499,6 +501,8 @@
     - !type:BuyerJobCondition
       whitelist:
         - Sheriff
+        - Bailiff
+        - SeniorOfficer
 
 - type: listing # Coyote removed job restrictions for this ammo
   id: UplinkSecurityEmpRocket

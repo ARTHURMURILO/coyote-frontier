@@ -257,6 +257,7 @@
       - id: WeaponCaseLongBulldog
       - id: WeaponCaseLongEnforcerExpedition
       - id: WeaponCaseLongEstocExpedition
+      - id: WeaponCaseShortAnacondaExpedition # Coyote
       - id: WeaponCaseShortAntiqueLaserExpedition
       - id: WeaponCaseShortAdvancedLaserExpedition
       - id: WeaponCaseLongLaserCarbineExpedition

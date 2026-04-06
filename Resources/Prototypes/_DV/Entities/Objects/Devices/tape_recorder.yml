@@ -79,7 +79,7 @@
     size: Tiny
   - type: Damageable
   - type: TapeCassette
-    maxCapacity: 180
+    maxCapacity: 1800 # Coyote tweak: 180 -> 1800 seconds
     repairWhitelist:
       tags:
       - Screwdriver

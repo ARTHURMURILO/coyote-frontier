@@ -26,3 +26,14 @@
   materials:
     Steel: 300
     Glass: 100
+
+# Coyote: Adds this here (should this be here...?)
+- type: latheRecipe
+  id: HoverBedHoloSpawnFolded
+  result: HoverBedHoloSpawnFolded
+  completetime: 4
+  materials:
+    Steel: 500
+    Glass: 300
+    Plastic: 300
+    Silver: 200

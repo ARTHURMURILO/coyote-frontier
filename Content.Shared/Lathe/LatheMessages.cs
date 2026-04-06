@@ -13,8 +13,11 @@ public sealed class LatheUpdateState : BoundUserInterfaceState
 
     public LatheRecipePrototype? CurrentlyProducing;
 
-    public LatheUpdateState(List<ProtoId<LatheRecipePrototype>> recipes, List<LatheRecipeBatch> queue, LatheRecipePrototype? currentlyProducing = null) // Frontier: change queue type
+    public int? BufferAmount; // Coyote: current buffer amount (if the lathe has a buffer)
+
+    public LatheUpdateState(List<ProtoId<LatheRecipePrototype>> recipes, List<LatheRecipeBatch> queue, LatheRecipePrototype? currentlyProducing = null, int? bufferAmount = null) // Frontier: change queue type // Coyote: add bufferAmount
     {
+        BufferAmount = bufferAmount; // Coyote
         Recipes = recipes;
         Queue = queue;
         CurrentlyProducing = currentlyProducing;

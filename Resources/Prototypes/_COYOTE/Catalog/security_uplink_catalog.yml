@@ -33,6 +33,7 @@
       whitelist:
         - Sheriff
         - Bailiff
+        - SeniorOfficer
         - NFDetective
 
 #region hardsuits
@@ -107,3 +108,24 @@
     - !type:BuyerJobCondition
       whitelist:
         - Brigmedic
+
+- type: listing # Coyote: making it possible to get more dusters via sheriff, bailiff, and sergeants
+  id: UplinkSecurityDusterMachineboard
+  name:  uplink-security-duster-machineboard-name
+  description: uplink-security-duster-machineboard-desc
+  productEntity: ShuttleGunDusterCircuitboard
+  icon: { sprite: Objects/Weapons/Guns/Shuttles/launcher.rsi, state: exp-2100g }
+  cost:
+    FrontierUplinkCoin: 15 # half the price of chorts because we want people to not jump to lethals immediately and duster lethal options are limited to Clake frags rarely
+  categories:
+    - UplinkSecurityWeapons
+  conditions:
+    - !type:StoreWhitelistCondition
+      whitelist:
+        tags:
+          - SecurityUplink
+    - !type:BuyerJobCondition
+      whitelist:
+        - Sheriff
+        - Bailiff
+        - SeniorOfficer

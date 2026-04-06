@@ -635,10 +635,14 @@
   name: nf-research-technology-anti-gravitational-fields
   entityIcon: NFClothingShoesBootsMoon
   discipline: NFScience
+  secondaryDiscipline: NFMedical # Coyote: Adds a secondary discipline now that this also has the holo hoverbed.
   tier: 1
   cost: 5000
   recipeUnlocks:
   - NFClothingShoesBootsMoon
+  # Begin DeltaV Additions -- Coyote: Add Holographic Hoverbeds to the same research as moon boots. Seems fitting...?
+  - HoverBedHoloSpawnFolded
+  # End DeltaV Additions
   technologyPrerequisites:
   - NFBasicMagnetsTech
   position: 0, 14
@@ -1406,7 +1410,7 @@
   position: 2, 32
 
 # Wayfarer Autopilot: begin
-- type: technology 
+- type: technology
   id: WFAutopilotServer
   name: wf-research-technology-autopilot-server
   entityIcon: AutopilotServer

@@ -42,7 +42,7 @@ using Content.Shared._NF.Lathe; // Frontier
 namespace Content.Server.Lathe
 {
     [UsedImplicitly]
-    public sealed class LatheSystem : SharedLatheSystem
+    public sealed partial class LatheSystem : SharedLatheSystem // Coyote: add partial
     {
         [Dependency] private readonly IGameTiming _timing = default!;
         [Dependency] private readonly IPrototypeManager _proto = default!;
@@ -207,10 +207,14 @@ namespace Content.Server.Lathe
                 return false;
             quantity = int.Min(quantity, MaxItemsPerRequest);
             // Frontier: argument check
+            //if (!CanProduce(uid, recipe, quantity, component)) // Frontier: 1<quantity
+            //    return false;
 
-            if (!CanProduce(uid, recipe, quantity, component)) // Frontier: 1<quantity
+            // Coyote Start
+            if (!CheckMaterialAvailability(uid, component, recipe, quantity)) // Coyote: Check material availability (including buffer)
                 return false;
 
+            /*
             foreach (var (mat, amount) in recipe.Materials)
             {
                 var adjustedAmount = recipe.ApplyMaterialDiscount
@@ -220,6 +224,10 @@ namespace Content.Server.Lathe
 
                 _materialStorage.TryChangeMaterialAmount(uid, mat, adjustedAmount);
             }
+            */
+            if (!DeductMaterials(uid, component, recipe, quantity)) // Coyote: deduct materials (buffer first, then storage)
+                return false;
+            // Coyote End
 
             // Frontier: queue up a batch
             if (component.Queue.Count > 0 && component.Queue[^1].Recipe.ID == recipe.ID)
@@ -330,7 +338,9 @@ namespace Content.Server.Lathe
 
             var producing = component.CurrentRecipe ?? component.Queue.FirstOrDefault()?.Recipe; // Frontier: add ?.Recipe
 
-            var state = new LatheUpdateState(GetAvailableRecipes(uid, component), component.Queue, producing);
+            int? bufferAmount = null; // Coyote: Biomass buffer
+            OnGetBufferAmount?.Invoke(uid, component, ref bufferAmount);  // Coyote: event to get buffer
+            var state = new LatheUpdateState(GetAvailableRecipes(uid, component), component.Queue, producing, bufferAmount); // Coyote: add bufferAmount
             _uiSys.SetUiState(uid, LatheUiKey.Key, state);
         }
 

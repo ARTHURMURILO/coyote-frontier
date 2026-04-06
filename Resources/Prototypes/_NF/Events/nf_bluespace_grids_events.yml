@@ -166,8 +166,10 @@
       grid: !type:GridSpawnGroup
         nameLoc:
         - station-event-bluespace-name-UnidentifiedVessel
-        minimumDistance: 1500
-        maximumDistance: 2500
+        minCount: 1 # Coyote add: make it vary from one
+        maxCount: 3 # Coyote add: to three instances
+        minimumDistance: 2500 # Coyote add: 1500 -> 2500m
+        maximumDistance: 3500 # Coyote add: 2500 -> 3500m
         addComponents:
         - type: Gravity
           enabled: true
@@ -206,8 +208,10 @@
       grid: !type:GridSpawnGroup
         nameLoc:
         - station-event-bluespace-name-UnidentifiedVessel
-        minimumDistance: 1500
-        maximumDistance: 2500
+        minCount: 1 # Coyote add: make it vary from one
+        maxCount: 3 # Coyote add: to three instances
+        minimumDistance: 2500 # Coyote add: 1500 -> 2500m
+        maximumDistance: 3500 # Coyote add: 2500 -> 3500m
         addComponents:
         - type: Gravity
           enabled: true
@@ -246,8 +250,10 @@
       grid: !type:GridSpawnGroup
         nameLoc:
         - station-event-bluespace-name-UnidentifiedVessel
-        minimumDistance: 1500
-        maximumDistance: 2500
+        minCount: 1 # Coyote add: make it vary from one
+        maxCount: 3 # Coyote add: to three instances
+        minimumDistance: 2500 # Coyote add: 1500 -> 2500m
+        maximumDistance: 3500 # Coyote add: 2500 -> 3500m
         addComponents:
         - type: Gravity
           enabled: true
@@ -279,14 +285,17 @@
     weight: 1
     duration: 1800
     maxDuration: 2400
-    maxOccurrences: 1
+#    maxOccurrences: 1 # Coyote remove: let the people eat dinos more than once a shift
+    reoccurrenceDelay: 240 # minutes Coyote Add: let the people eat dinos like once every 4 hours
   - type: BluespaceErrorRule
     groups:
       grid: !type:GridSpawnGroup
         nameLoc:
         - station-event-bluespace-name-Cave
-        minimumDistance: 1500
-        maximumDistance: 2500
+        minCount: 1 # Coyote add: make it vary from one
+        maxCount: 3 # Coyote add: to three instances
+        minimumDistance: 2500 # Coyote add: 1500 -> 2500m
+        maximumDistance: 3500 # Coyote add: 2500 -> 3500m
         addComponents:
         - type: Gravity
           enabled: true

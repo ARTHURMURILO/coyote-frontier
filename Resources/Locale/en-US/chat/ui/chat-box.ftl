@@ -25,6 +25,7 @@ hud-chatbox-channel-Emotes = Emotes
 hud-chatbox-channel-Local = Local
 hud-chatbox-channel-Whisper = Whisper
 hud-chatbox-channel-LOOC = LOOC
+hud-chatbox-channel-SubtleLOOC = Subtle LOOC
 hud-chatbox-channel-OOC = OOC
 hud-chatbox-channel-Radio = Radio
 hud-chatbox-channel-Notifications = Notifications

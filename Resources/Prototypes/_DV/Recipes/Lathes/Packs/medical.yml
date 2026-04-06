@@ -8,3 +8,10 @@
   id: AACTableStatic
   recipes:
   - AACTablet
+
+## Dynamic
+
+- type: latheRecipePack
+  id: MedicalDeltaV
+  recipes:
+  - HoverBedHoloSpawnFolded

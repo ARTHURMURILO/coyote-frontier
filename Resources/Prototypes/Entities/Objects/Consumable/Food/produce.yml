@@ -1709,8 +1709,8 @@
       food:
         maxVol: 20
         reagents:
-        #- ReagentId: Omnizine # Coyote Change
-        #  Quantity: 3
+        - ReagentId: Tricordrazine # Coyote Change: Omni to Tricord
+          Quantity: 3
         - ReagentId: SpaceDrugs
           Quantity: 5
         - ReagentId: Nutriment

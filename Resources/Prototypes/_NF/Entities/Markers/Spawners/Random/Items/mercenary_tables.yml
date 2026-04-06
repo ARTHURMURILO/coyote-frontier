@@ -402,7 +402,7 @@
       #- id: CrateAmmoBoxBigLethal25 # Coyote: Remove .25 from tables
       - id: CrateAmmoBoxBigLethal30
       - id: CrateAmmoBoxBigRubber20
-      - id: CrateAmmoBoxBigRubber25
+      #- id: CrateAmmoBoxBigRubber25 # Coyote: Remove .25 from tables
       - id: CrateAmmoBoxFlareShotgun
     # T5 - Legendary
     - !type:GroupSelector

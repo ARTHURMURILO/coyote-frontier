@@ -71,6 +71,9 @@ uplink-security-cash30000-name = 30,000 Spesos
 uplink-security-cash100000-name = 100,000 Spesos
 uplink-security-cash100000-desc = Cold, hard cash.
 
+uplink-security-duster-machineboard-name = EXP-2100g "Duster" machine board
+uplink-security-duster-machineboard-desc = A powerful stationary grenade launcher fed from a magazine.
+
 uplink-electric-range-name = Donk Co. Electric Range
 uplink-electric-range-desc = A flatpack used for deploying a Donk Co. electric range
 

@@ -9,7 +9,7 @@ horny-examine-calm        = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGAT
 horny-examine-confident   = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} confident, like {SUBJECT($target)} really know{CONJUGATE-BASIC($target, "", "s")} what {SUBJECT($target)}{CONJUGATE-BASIC($target, "'re", "'s")} doing.[/color]
 horny-examine-cuddly      = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} soft and squishable![/color]
 horny-examine-curious     = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} really curious about things.[/color]
-horny-examine-distracted  = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} kind of flirty and prone to teasing![/color]
+horny-examine-distracted  = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} kind of distracted on other things![/color]
 horny-examine-dopey       = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} a bit uh - well. A bit dopey. A bit not all there.[/color]
 horny-examine-dorky       = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} a little socially awkward, but not maliciously so.[/color]
 horny-examine-eager       = [color=Cyan]{CAPITALIZE(SUBJECT($target))} {CONJUGATE-BASIC($target, "seem", "seems")} eager!  Almost like a puppy.[/color]

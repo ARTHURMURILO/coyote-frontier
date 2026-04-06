@@ -393,6 +393,7 @@
   - ContractorClothingOuterCoatBishop
   - ContractorClothingOuterCoatWitchHunter
   - ContractorClothingOuterCoatCardinal
+  - ContractorClothingOuterEpiChaplainMantle # Coyote
   - ContractorClothingOuterPlagueSuit
   - ContractorWetFloorSign
   - ContractorClothingOuterCoatExpensive
@@ -690,6 +691,8 @@
   - ContractorClothingNeckIFFCyan
   - ContractorClothingNeckIFFOrange
   - ContractorClothingNeckIFFPurple
+  - ContractorClothingNeckMantle # Coyote
+  - ContractorClothingNeckTieGeoffroyblack12 # Coyote
   - ContractorClothingNeckMantleCap
   - ContractorClothingNeckCloakCap
   - ContractorClothingNeckCloakCapFormal
@@ -880,6 +883,7 @@
   - ContractorHandheldCrewMonitor
   - ContractorHypoMini
   - ContractorBible
+  - ContractorBibleDruid # Coyote
 
 - type: loadoutGroup
   id: ContractorFace

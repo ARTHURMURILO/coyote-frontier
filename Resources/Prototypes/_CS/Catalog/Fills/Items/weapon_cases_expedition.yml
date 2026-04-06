@@ -1,3 +1,15 @@
+#region Revolvers
+- type: entity
+  parent: WeaponCaseShort
+  id: WeaponCaseShortAnacondaExpedition
+  suffix: Dungeon, Anaconda
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: StorageFill
+    contents:
+    - id: CSWeaponPistolAnacondaExpedition
+      amount: 1
+
 ## Coyote .40 pistol
 - type: entity
   parent:

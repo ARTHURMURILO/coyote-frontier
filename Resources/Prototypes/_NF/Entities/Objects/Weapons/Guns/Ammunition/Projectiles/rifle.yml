@@ -221,8 +221,8 @@
   - type: Projectile
     damage:
       types:
-        Piercing: 25
-        Radiation: 16
+        Piercing: 34 # 0.6 * (1.4 * base total dmg) Coyote fix: apply rad ammo damage characteristics to 30 rifle
+        Radiation: 23 # 0.4 * (1.4 * base total dmg) Coyote fix: apply rad ammo damage characteristics to 30 rifle
 
 - type: entity
   id: NFBulletRifle30Practice

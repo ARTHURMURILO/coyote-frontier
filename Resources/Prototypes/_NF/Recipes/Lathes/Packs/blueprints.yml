@@ -192,6 +192,8 @@
   - JetpackBlue
   - JetpackCaptain
   - ImpCoffeeMachineCircuitboard #imp
+  # GravityResistantTech
+  - HoverBedHoloSpawnFolded
 
 # region Mercenary
 - type: latheRecipePack

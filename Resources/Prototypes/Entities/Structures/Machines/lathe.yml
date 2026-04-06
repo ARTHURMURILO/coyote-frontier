@@ -704,6 +704,13 @@
     spriteLayers:
     - beaker
   # End Frontier: emag lathe recipes, item mapper
+  # Coyote Start: Biogenerator Buffer System
+  - type: BiogeneratorBuffer
+    current: 0
+    max: 100
+    regenAmount: 5
+    regenInterval: 10
+  # End Coyote
 
 - type: entity
   parent: BaseLathe

@@ -196,7 +196,7 @@
     color: "#FF8888" # distinguish from regular PKA bolts
   - type: Projectile
     damage:
-      types: # it's for mining hard things, not destroying critters
+      types:
         Blunt: 1
         Structural: 1
   - type: TimedDespawn

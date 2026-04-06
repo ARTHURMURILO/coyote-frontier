@@ -55,6 +55,14 @@
   minutesUntilDecayToZero: 80
 
 - type: rpiAura
+  id: rpiAuraDoC
+  multiplier: 2.5
+  maxDistance: 15.0
+  minutesTillFullEffect: 40
+  minutesUntilDecayDelay: 20
+  minutesUntilDecayToZero: 80
+
+- type: rpiAura
   id: rpiAuraCurator
   multiplier: 2.5
   maxDistance: 17.0
