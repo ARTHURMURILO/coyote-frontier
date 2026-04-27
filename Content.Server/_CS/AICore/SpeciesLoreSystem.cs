@@ -3,6 +3,10 @@ using Robust.Shared.Prototypes;
 
 namespace Content.Server._CS.AICore;
 
+/// <summary>
+///     Provides lore descriptions for species via SpeciesLorePrototype.
+///     Used by the prompt builder to include species context in the system prompt.
+/// </summary>
 public sealed class SpeciesLoreSystem : EntitySystem
 {
     [Dependency] private readonly IPrototypeManager _prototype = default!;

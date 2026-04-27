@@ -8,6 +8,13 @@ using Content.Shared._CS.AICore;
 
 namespace Content.Server._CS.AICore;
 
+/// <summary>
+///     HTTP client for the LLM API (OpenAI-compatible chat completions endpoint).
+///     Sends system+user messages, deserializes the JSON response into <see cref="LLMResponse"/>.
+///     Supports Bearer token auth, configurable model/temperature/max_tokens/reasoning_effort,
+///     and a 30-second timeout.
+///     The response is parsed by stripping markdown fences and extracting the first JSON object.
+/// </summary>
 public sealed class CoyoteLLMClientSystem : EntitySystem
 {
     private readonly HttpClient _http = new();

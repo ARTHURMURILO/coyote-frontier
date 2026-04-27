@@ -3,6 +3,11 @@ using Robust.Client.GameObjects;
 
 namespace Content.Client._CS.AICore;
 
+/// <summary>
+///     BUI controller for the AI core config window.
+///     Routes save/reset/lock/channel/vision messages between the menu and server.
+///     One instance per open AI core config window.
+/// </summary>
 public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
 {
     private CoyoteAIConfigMenu? _menu;

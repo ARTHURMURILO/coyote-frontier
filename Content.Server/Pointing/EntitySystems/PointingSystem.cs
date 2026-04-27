@@ -307,6 +307,12 @@ namespace Content.Server.Pointing.EntitySystems
             return true;
         }
 
+        /// <summary>
+        ///     Points one entity at another, bypassing the player-session-based <see cref="TryPoint"/>.
+        ///     Used by CoyoteAI core to point at entities via LLM "point_at" responses.
+        ///     <paramref name="rotateToFace"/> defaults true to maintain backward compatibility with any
+        ///     existing callers; the AI core passes false because it is anchored and cannot rotate.
+        /// </summary>
         public bool TryPointEntity(EntityUid pointer, EntityUid target, bool rotateToFace = true)
         {
             var coordsPointed = Transform(target).Coordinates;

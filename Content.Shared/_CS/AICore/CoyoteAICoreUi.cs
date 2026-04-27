@@ -3,6 +3,10 @@ using Robust.Shared.Serialization;
 
 namespace Content.Shared._CS.AICore;
 
+/// <summary>
+///     UI keys for the AI core config and logic panels.
+///     Config is the main full/locked BUI view; Logic reserved for future use.
+/// </summary>
 [Serializable, NetSerializable]
 public enum CoyoteAICoreUiKey : byte
 {
@@ -28,6 +32,12 @@ public enum ReasoningLevel : byte
     Max,
 }
 
+/// <summary>
+///     BUI state sent from server to client on every UI refresh.
+///     <see cref="RefreshOnly"/> controls whether the client overwrites
+///     text-field contents — set to true for periodic/checkbox updates
+///     so the user's unsaved edits are preserved.
+/// </summary>
 [Serializable, NetSerializable]
 public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
 {
@@ -104,6 +114,10 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
     }
 }
 
+/// <summary>
+///     Save-message sent from client when the user clicks "Save Configuration".
+///     ApiKey is only written server-side if non-empty (empty = preserve existing key).
+/// </summary>
 [Serializable, NetSerializable]
 public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
 {
@@ -154,6 +168,11 @@ public sealed class CoyoteAIUnclaimMessage : BoundUserInterfaceMessage
 {
 }
 
+/// <summary>
+///     Toggles a vision-filter option (ShowPeople, ShowMachines, etc.).
+///     Sent on checkbox change; processed server-side with refreshOnly=true
+///     so unsaved text fields are not overwritten.
+/// </summary>
 [Serializable, NetSerializable]
 public sealed class CoyoteAISetVisionOptionMessage : BoundUserInterfaceMessage
 {
@@ -167,6 +186,10 @@ public sealed class CoyoteAISetVisionOptionMessage : BoundUserInterfaceMessage
     }
 }
 
+/// <summary>
+///     Sets a logic channel to Off/On/Pulse.
+///     Triggered by the three-button row in the UI.
+/// </summary>
 [Serializable, NetSerializable]
 public sealed class CoyoteAISetLogicChannelMessage : BoundUserInterfaceMessage
 {
@@ -180,6 +203,11 @@ public sealed class CoyoteAISetLogicChannelMessage : BoundUserInterfaceMessage
     }
 }
 
+/// <summary>
+///     A single entry in the conversation history.
+///     Type is one of: "radio", "local", "emote", "followup".
+///     SpeakerContext describes what the speaker is doing/holding.
+/// </summary>
 public sealed class ChatEntry
 {
     public string Type = string.Empty;
@@ -193,6 +221,10 @@ public sealed class ChatEntry
     public string SpeakerContext = string.Empty;
 }
 
+/// <summary>
+///     Deserialized LLM JSON response.
+///     All fields use snake_case JsonPropertyName to match OpenAI-compatible API output.
+/// </summary>
 public sealed class LLMResponse
 {
     [JsonPropertyName("should_respond")]

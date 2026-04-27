@@ -4,6 +4,12 @@ using Content.Shared._CS.AICore;
 
 namespace Content.Server._CS.AICore;
 
+/// <summary>
+///     Builds the LLM system and user prompts.
+///     System prompt includes: AI identity, lore, radio channels, vision block,
+///     crew manifest, species info, active lawset, roleplay guidelines, and logic channel docs.
+///     User prompt contains the conversation history and the current message context.
+/// </summary>
 public sealed class CoyotePromptBuilder
 {
     public string BuildSystemPrompt(CoyoteAICoreComponent core, CrewManifest manifest, string speciesLoreBlock, string lawBlock, string visionBlock, string shiftDuration, string timeSinceLast)

@@ -2,6 +2,11 @@ using Robust.Shared.Timing;
 
 namespace Content.Server._CS.AICore;
 
+/// <summary>
+///     Rate-limits AI core responses per core ID.
+///     Rules: max 1 response per second, max 10 responses per 30-second sliding window.
+///     This prevents the AI from spamming chat in response to rapid-fire messages.
+/// </summary>
 public sealed class CoyoteRateLimiterSystem : EntitySystem
 {
     [Dependency] private readonly IGameTiming _timing = default!;

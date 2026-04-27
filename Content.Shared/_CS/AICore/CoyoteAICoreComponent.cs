@@ -3,6 +3,11 @@ using Robust.Shared.Prototypes;
 
 namespace Content.Shared._CS.AICore;
 
+/// <summary>
+///     Core component for the LLM-powered AI.
+///     Server-authoritative: ApiKey and ApiEndpoint are never sent to clients.
+///     Fields marked AutoNetworkedField are sent to the client for UI display.
+/// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class CoyoteAICoreComponent : Component
 {

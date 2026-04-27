@@ -45,6 +45,14 @@ using Robust.Shared.Timing;
 
 namespace Content.Server._CS.AICore;
 
+/// <summary>
+///     Main orchestrator for LLM-powered AI cores.
+///     Handles radio/local chat intake, vision building, pointing, logic channels,
+///     rate limiting, ID-card claiming, and periodic UI refresh.
+///     LLM calls are offloaded to async tasks via producer/consumer queues
+///     (<see cref="_pendingRequests"/>/<see cref="_pendingResponses"/>)
+///     to avoid blocking the main simulation tick.
+/// </summary>
 public sealed class CoyoteAICoreSystem : EntitySystem
 {
     [Dependency] private readonly CoyoteLLMClientSystem _llm = default!;
@@ -104,6 +112,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         _recentlyProcessed.Clear();
         RevertExpiredPulses();
 
+        // Periodic UI refresh every 2 seconds for all cores.
+        // Uses refreshOnly=true so text fields (AI name, personality, etc.)
+        // are not overwritten while the user is editing them.
         var now = _timing.CurTime;
         if (now - _lastFullUiRefresh > TimeSpan.FromSeconds(2))
         {
@@ -305,6 +316,12 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         }
     }
 
+    /// <summary>
+    ///     Process an incoming chat message for a specific core.
+    ///     When locked+claimed, only the owner (physically holding their ID card)
+    ///     can trigger responses — this is the "privacy mode" that prevents
+    ///     bystanders from talking to a locked AI core.
+    /// </summary>
     private void HandleIncomingMessage(EntityUid uid, CoyoteAICoreComponent core, ChatEntry entry, int? distance, EntityUid? sourceEntity = null)
     {
         if (core.IsLocked && core.IsClaimed && (sourceEntity == null || !HasOwnerIdCard(sourceEntity.Value, core.OwnerName)))
@@ -777,6 +794,15 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         return TryComp<ApcPowerReceiverComponent>(uid, out var apc) && apc.Powered;
     }
 
+    /// <summary>
+    ///     Sends the full BUI state to all watching clients.
+    ///     When <paramref name="refreshOnly"/> is true, the client skips overwriting
+    ///     text-field contents (AiNameEdit, PersonalityEdit, etc.) so the user's
+    ///     in-progress edits survive checkbox/layout toggles.
+    ///     The system prompt is rebuilt every time because it includes the live
+    ///     vision block and crew manifest; the char-count-based token estimate
+    ///     is derived from it for the "Total prompt tokens" display.
+    /// </summary>
     private void UpdateConfigUi(Entity<CoyoteAICoreComponent> ent, bool refreshOnly = false)
     {
         var lawSets = _prototype.EnumeratePrototypes<SiliconLawsetPrototype>()
@@ -862,6 +888,19 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
     private static readonly string[] OrganItemPrefixes = { "brain", "positronic brain", "heart", "lungs", "liver", "kidneys", "appendix", "eyes", "tongue", "stomach" };
 
+    /// <summary>
+    ///     Builds the "NEARBY" vision block for the LLM system prompt.
+    ///     Uses three separate entity queries for clean categorization:
+    ///     1. MobStateComponent entities → CREW/MOBS (includes health, clothing, held items, markings)
+    ///     2. ActivatableUIComponent entities → MACHINES/COMPUTERS (excludes mobs and items, aggregated by name)
+    ///     3. ItemComponent entities → ITEMS (aggregated by name, with contraband level)
+    ///     All entries are filtered by:
+    ///     - Distance (VisionRange, 1-15m)
+    ///     - Line-of-sight occlusion (InRangeUnOccluded)
+    ///     - Visibility layer mask (blocks ghosts, etc.)
+    ///     Duplicate machines/items are aggregated with "×N" notation and comma-separated distances.
+    ///     Direction [N/NE/E/SE/S/SW/W/NW] is only shown for unique entities (count == 1).
+    /// </summary>
     private string BuildVisionBlock(EntityUid coreUid, CoyoteAICoreComponent core)
     {
         if (!TryComp<TransformComponent>(coreUid, out var coreXform))
@@ -1212,6 +1251,13 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         };
     }
 
+    /// <summary>
+    ///     Resolves an entity name from the LLM's "point_at" response field
+    ///     and calls <see cref="PointingSystem.TryPointEntity"/> to spawn a
+    ///     pointing arrow. Searches all entities by name (case-insensitive),
+    ///     selecting the nearest visible one within vision range.
+    ///     Uses rotateToFace: false because the AI core is anchored and cannot rotate.
+    /// </summary>
     private void PointAtEntity(EntityUid pointer, string targetName, float visionRange)
     {
         if (!TryComp<TransformComponent>(pointer, out var coreXform))
@@ -1283,7 +1329,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         if (markingId.Contains("Vagina")) return "vagina";
         if (markingId.Contains("Penis") || markingId.Contains("Dick")) return "penis";
         if (markingId.Contains("Balls")) return "testicles";
-        if (markingId.Contains("Chest") || markingId.Contains("Chest"))
+        if (markingId.Contains("Chest"))
             return "chest markings";
         if (markingId.Contains("Tail")) return "tail";
         if (markingId.Contains("HeadTop") || markingId.Contains("Ear"))
@@ -1306,6 +1352,12 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         if (id.Contains("O")) return "O"; return "?";
     }
 
+    /// <summary>
+    ///     Maps ContrabandComponent.Severity to a 0-4 integer for the vision block.
+    ///     Special case: "for authorized use only" in description → level 4 (Grand Theft tier).
+    ///     The severity values are strings; they cover both standard SS14 tiers and
+    ///     Coyote Frontier's extended contraband classification.
+    /// </summary>
     private int GetContrabandLevel(EntityUid uid, string? description)
     {
         if (description != null && description.Contains("for authorized use only", StringComparison.OrdinalIgnoreCase))

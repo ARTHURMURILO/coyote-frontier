@@ -9,6 +9,11 @@ using Robust.Shared.Prototypes;
 
 namespace Content.Server._CS.AICore;
 
+/// <summary>
+///     Maintains a live crew manifest by tracking PlayerAttached/Detached events.
+///     Falls back to OwnedEntity for ghosted players (mind without AttachedEntity).
+///     Used by CoyotePromptBuilder to list crew in the system prompt.
+/// </summary>
 public sealed class CoyoteManifestSystem : EntitySystem
 {
     [Dependency] private readonly SharedMindSystem _mind = default!;

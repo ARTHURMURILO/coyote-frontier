@@ -8,6 +8,14 @@ using Robust.Shared.Timing;
 
 namespace Content.Client._CS.AICore;
 
+/// <summary>
+///     AI core configuration window (both full and locked views).
+///     Full view: all text fields, vision checkboxes, logic channel rows,
+///     save button, token counters, ID owner section.
+///     Locked view: minimal display showing owner name and lock/unlock/abandon.
+///     Uses refreshOnly flag to preserve unsaved text-field edits during
+///     periodic UI refreshes and checkbox toggles.
+/// </summary>
 [GenerateTypedNameReferences]
 public sealed partial class CoyoteAIConfigMenu : FancyWindow
 {
@@ -261,6 +269,10 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         VisionItemsDetailCheck.Pressed = state.ShowItemsDetail;
         VisionItemsDetailCheck.Disabled = !state.ShowItems;
 
+        // When RefreshOnly is true, skip overwriting text-field contents
+        // so the user's unsaved edits (AI name, personality, API endpoint, etc.)
+        // are preserved. Only update checkboxes, labels, and channel visuals.
+        // Vision/logic toggles and the 2-second periodic refresh use this flag.
         if (!state.RefreshOnly)
         {
             AiNameEdit.Text = state.AiName;
