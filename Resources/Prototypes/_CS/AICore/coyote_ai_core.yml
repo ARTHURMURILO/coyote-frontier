@@ -1,8 +1,9 @@
 - type: entity
   parent: BaseComputer
   id: CoyoteAICore
-  name: coyote AI core
-  description: An experimental neural network core powered by an external intelligence.
+  name: VIGIL CORE
+  description: >-
+    A VIGIL (Vessel Intelligence & General Integration Layer) core unit. An experimental AI core based on the LLM API system (OpenAI compatible API) by the now bankrupt 'ClosedAI' and their partner 'MicroSloopy', this core gives the LLM all the tools to be able to interact with the world with features such as pointing, speaking, radio, logic channels, vision, descriptions, crew manifest, Story/politic books and other features allowing for your lonely ship to be less lonely! (quality will vary with LLM model used)
   components:
   - type: CoyoteAICore
   - type: Computer
@@ -70,8 +71,8 @@
 - type: entity
   parent: BaseComputerCircuitboard
   id: CoyoteAICoreCircuitboard
-  name: coyote AI core circuitboard
-  description: A circuitboard for an experimental AI core.
+  name: VIGIL CORE circuitboard
+  description: A circuitboard for a VIGIL (Vessel Intelligence & General Integration Layer) core.
   components:
   - type: ComputerBoard
     prototype: CoyoteAICore

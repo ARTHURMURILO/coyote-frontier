@@ -1,8 +1,8 @@
 <controls:FancyWindow xmlns="https://spacestation14.io"
                        xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
                        Title="AI Core"
-                        MinSize="400 180"
-                        SetSize="560 220">
+                         MinSize="400 180"
+                         SetSize="740 220">
     <!-- Full config view (unlocked) -->
     <ScrollContainer Name="FullView" HorizontalExpand="True" VerticalExpand="True" Visible="True">
         <BoxContainer Orientation="Vertical" Margin="10" SeparationOverride="8">
@@ -89,6 +89,50 @@
         <Label Name="HistoryLabel" Text="" FontColorOverride="#888888" />
         <Label Name="TokenLabel" Text="" FontColorOverride="#888888" />
         <Label Name="TotalTokenLabel" Text="" FontColorOverride="#888888" />
+
+        <!-- Token breakdown bar -->
+        <BoxContainer Name="TokenBarContainer" Orientation="Horizontal" MinSize="0 20" Margin="0 2" />
+        <BoxContainer Name="TokenLegendContainer" Orientation="Vertical" MinSize="0 16" Margin="0 0 0 4" SeparationOverride="2" />
+
+        <!-- Advanced Settings toggle -->
+        <Button Name="AdvancedToggle" Text="▼ Advanced Settings" MinSize="0 30" Margin="0 4" />
+
+        <!-- Collapsible advanced settings -->
+        <BoxContainer Name="AdvancedSection" Orientation="Vertical" SeparationOverride="4" Visible="False">
+            <Label Text="Response Cooldown" FontColorOverride="#888888" />
+            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                <Label Text="Base (s)" MinSize="60 0" VerticalAlignment="Center" />
+                <LineEdit Name="CooldownBaseEdit" MinSize="80 30" />
+                <Button Name="CooldownBaseDefault" Text="Default" MinSize="70 30" />
+            </BoxContainer>
+            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                <Label Text="Char Factor" MinSize="60 0" VerticalAlignment="Center" />
+                <LineEdit Name="CooldownCharFactorEdit" MinSize="80 30" />
+                <Button Name="CooldownCharFactorDefault" Text="Default" MinSize="70 30" />
+            </BoxContainer>
+            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                <Label Text="Max (s)" MinSize="60 0" VerticalAlignment="Center" />
+                <LineEdit Name="CooldownMaxEdit" MinSize="80 30" />
+                <Button Name="CooldownMaxDefault" Text="Default" MinSize="70 30" />
+            </BoxContainer>
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <Label Text="Forced Auto-Continue" FontColorOverride="#888888" />
+            <CheckBox Name="AutoContinueCheck" Text="Enable forced auto-continue" />
+            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                <Label Text="Threshold" MinSize="60 0" VerticalAlignment="Center" />
+                <LineEdit Name="AutoContinueThresholdEdit" MinSize="80 30" />
+                <Button Name="AutoContinueThresholdDefault" Text="Default" MinSize="70 30" />
+            </BoxContainer>
+            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                <Label Text="Max Continues" MinSize="60 0" VerticalAlignment="Center" />
+                <LineEdit Name="AutoContinueMaxEdit" MinSize="80 30" />
+                <Button Name="AutoContinueMaxDefault" Text="Default" MinSize="70 30" />
+            </BoxContainer>
+        </BoxContainer>
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
             <Button Name="SaveButton" Text="Save Configuration" MinSize="0 44" />
 

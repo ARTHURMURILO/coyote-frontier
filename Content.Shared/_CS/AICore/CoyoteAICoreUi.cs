@@ -72,6 +72,20 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
 
     public float VisionRange;
 
+    public int TokenSystem;
+    public int TokenPersonLore;
+    public int TokenCrewXeno;
+    public int TokenVision;
+    public int TokenHistory;
+    public int TokenContext;
+
+    public float CooldownBase;
+    public float CooldownCharFactor;
+    public float CooldownMax;
+    public bool AutoContinue;
+    public int AutoContinueThreshold;
+    public int AutoContinueMax;
+
     public CoyoteAIConfigBuiState(string aiName, string personalityPrompt, string apiEndpoint,
         string modelName, float temperature, bool hasApiKey,
         ReasoningLevel reasoningLevel, string lawSet, string[] availableLawSets,
@@ -82,7 +96,11 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         bool lockedView = false,
         bool showPeople = true, bool showMachines = true, bool showMachinesDetail = false,
         bool showItems = true, bool showItemsDetail = false,
-        float visionRange = 15f)
+        float visionRange = 15f,
+        int tokenSystem = 0, int tokenPersonLore = 0, int tokenCrewXeno = 0,
+        int tokenVision = 0, int tokenHistory = 0, int tokenContext = 0,
+        float cooldownBase = 0.3f, float cooldownCharFactor = 0.02f, float cooldownMax = 4f,
+        bool autoContinue = false, int autoContinueThreshold = 400, int autoContinueMax = 2)
     {
         AiName = aiName;
         PersonalityPrompt = personalityPrompt;
@@ -110,6 +128,18 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         ShowItems = showItems;
         ShowItemsDetail = showItemsDetail;
         VisionRange = visionRange;
+        TokenSystem = tokenSystem;
+        TokenPersonLore = tokenPersonLore;
+        TokenCrewXeno = tokenCrewXeno;
+        TokenVision = tokenVision;
+        TokenHistory = tokenHistory;
+        TokenContext = tokenContext;
+        CooldownBase = cooldownBase;
+        CooldownCharFactor = cooldownCharFactor;
+        CooldownMax = cooldownMax;
+        AutoContinue = autoContinue;
+        AutoContinueThreshold = autoContinueThreshold;
+        AutoContinueMax = autoContinueMax;
         RefreshOnly = false;
     }
 }
@@ -133,10 +163,18 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
     public int MaxTokens;
     public bool Enabled;
     public float VisionRange;
+    public float CooldownBase;
+    public float CooldownCharFactor;
+    public float CooldownMax;
+    public bool AutoContinue;
+    public int AutoContinueThreshold;
+    public int AutoContinueMax;
 
     public CoyoteAIConfigSaveMessage(string aiName, string personalityPrompt, string apiEndpoint,
         string modelName, string apiKey, float temperature, ReasoningLevel reasoningLevel,
-        string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange = 15f)
+        string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange = 15f,
+        float cooldownBase = 0.3f, float cooldownCharFactor = 0.02f, float cooldownMax = 4f,
+        bool autoContinue = false, int autoContinueThreshold = 400, int autoContinueMax = 2)
     {
         AiName = aiName;
         PersonalityPrompt = personalityPrompt;
@@ -150,6 +188,12 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
         MaxTokens = maxTokens;
         Enabled = enabled;
         VisionRange = visionRange;
+        CooldownBase = cooldownBase;
+        CooldownCharFactor = cooldownCharFactor;
+        CooldownMax = cooldownMax;
+        AutoContinue = autoContinue;
+        AutoContinueThreshold = autoContinueThreshold;
+        AutoContinueMax = autoContinueMax;
     }
 }
 

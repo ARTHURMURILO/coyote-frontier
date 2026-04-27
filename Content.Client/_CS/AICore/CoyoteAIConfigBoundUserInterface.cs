@@ -18,10 +18,11 @@ public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
     {
         base.Open();
         _menu = new();
-        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange) =>
+        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange, cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax) =>
         {
             SendMessage(new CoyoteAIConfigSaveMessage(
-                name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange));
+                name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange,
+                cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax));
         };
         _menu.OnResetHistory += () =>
         {

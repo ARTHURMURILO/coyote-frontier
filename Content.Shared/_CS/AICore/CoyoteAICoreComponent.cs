@@ -13,7 +13,7 @@ namespace Content.Shared._CS.AICore;
 public sealed partial class CoyoteAICoreComponent : Component
 {
     [DataField][AutoNetworkedField] public string CoreId = string.Empty;
-    [DataField][AutoNetworkedField] public string AiName = "Coyote";
+    [DataField][AutoNetworkedField] public string AiName = "Cortana";
     [DataField][AutoNetworkedField] public string PersonalityPrompt = string.Empty;
     [DataField] public string ApiEndpoint = "http://localhost:1234/v1/chat/completions";
     [DataField] public string ModelName = string.Empty;
@@ -47,6 +47,14 @@ public sealed partial class CoyoteAICoreComponent : Component
     [DataField] public SoundSpecifier PromptSound = new SoundPathSpecifier("/Audio/Machines/Nuke/general_beep.ogg");
     [DataField] public TimeSpan NextSound;
     [DataField] public TimeSpan SoundCooldown = TimeSpan.FromSeconds(1);
+
+    [DataField][AutoNetworkedField] public float CooldownBase = 0.3f;
+    [DataField][AutoNetworkedField] public float CooldownCharFactor = 0.02f;
+    [DataField][AutoNetworkedField] public float CooldownMax = 4.0f;
+
+    [DataField][AutoNetworkedField] public bool AutoContinue = false;
+    [DataField][AutoNetworkedField] public int AutoContinueThreshold = 400;
+    [DataField][AutoNetworkedField] public int AutoContinueMax = 2;
 
     [ViewVariables] public bool HasApiKeyConfigured => !string.IsNullOrEmpty(ApiKey);
     [ViewVariables] public bool IsClaimed => !string.IsNullOrEmpty(OwnerId);

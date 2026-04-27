@@ -83,6 +83,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     private readonly Dictionary<string, TimeSpan> _coreDelays = new();
     private readonly Dictionary<(string, int), TimeSpan> _pulseEndTimes = new();
     private readonly HashSet<(EntityUid, string)> _recentlyProcessed = new();
+    private readonly HashSet<string> _busyCores = new();
+    private readonly Dictionary<string, List<ChatEntry>> _pendingBatches = new();
+    private readonly Dictionary<string, int> _autoContinueCounts = new();
     private TimeSpan _lastUiRefresh = TimeSpan.Zero;
     private TimeSpan _lastFullUiRefresh = TimeSpan.Zero;
 
@@ -132,6 +135,8 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             InjectResponse(response);
         }
 
+        ProcessExpiredCooldowns();
+
         if (_pendingRequests.TryDequeue(out var request))
         {
             Log.Debug($"CoyoteAI: Update dequeued request for core {request.Core.CoreId}, starting LLM call");
@@ -147,13 +152,16 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         _histories[ent.Comp.CoreId] = new Queue<ChatEntry>();
 
         if (!string.IsNullOrEmpty(ent.Comp.AiName))
-            _metaData.SetEntityName(ent, ent.Comp.AiName);
+            _metaData.SetEntityName(ent, $"VIGIL CORE-{ent.Comp.AiName}");
     }
 
     private void OnShutdown(Entity<CoyoteAICoreComponent> ent, ref ComponentShutdown args)
     {
         _histories.Remove(ent.Comp.CoreId);
         _coreDelays.Remove(ent.Comp.CoreId);
+        _pendingBatches.Remove(ent.Comp.CoreId);
+        _busyCores.Remove(ent.Comp.CoreId);
+        _autoContinueCounts.Remove(ent.Comp.CoreId);
         _rateLimiter.Reset(ent.Comp.CoreId);
     }
 
@@ -342,9 +350,23 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         while (history.Count > core.MaxHistoryLength)
             history.Dequeue();
 
+        // Busy check: core has an in-flight LLM request → batch for later
+        if (_busyCores.Contains(core.CoreId))
+        {
+            Log.Debug($"CoyoteAI: Core {core.CoreId} busy, batching message from '{entry.SpeakerName}'");
+            if (!_pendingBatches.ContainsKey(core.CoreId))
+                _pendingBatches[core.CoreId] = new List<ChatEntry>();
+            _pendingBatches[core.CoreId].Add(entry);
+            return;
+        }
+
+        // Cooldown check: within post-response pause → batch instead of dropping
         if (_coreDelays.TryGetValue(core.CoreId, out var delayUntil) && _timing.CurTime < delayUntil)
         {
-            Log.Debug($"CoyoteAI: Core {core.CoreId} in forced delay for {((delayUntil - _timing.CurTime).TotalSeconds):F1}s more");
+            Log.Debug($"CoyoteAI: Core {core.CoreId} in cooldown for {((delayUntil - _timing.CurTime).TotalSeconds):F1}s, batching");
+            if (!_pendingBatches.ContainsKey(core.CoreId))
+                _pendingBatches[core.CoreId] = new List<ChatEntry>();
+            _pendingBatches[core.CoreId].Add(entry);
             return;
         }
 
@@ -356,11 +378,14 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
         Log.Debug($"CoyoteAI: Enqueuing LLM request for core {core.CoreId} from speaker '{entry.SpeakerName}'");
 
+        // Sound only plays when a new LLM call actually starts, not during batch accumulation
         if (_timing.CurTime >= core.NextSound)
         {
             core.NextSound = _timing.CurTime + core.SoundCooldown;
             _audio.PlayPvs(core.PromptSound, uid);
         }
+
+        _busyCores.Add(core.CoreId);
 
         var shiftDuration = FormatTime(_timing.CurTime);
         var timeSinceLast = GetTimeSinceLastResponse(core.CoreId);
@@ -369,7 +394,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
         var lawBlock = BuildLawBlock(core.LawSet);
         var visionBlock = BuildVisionBlock(uid, core);
-        var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, timeSinceLast);
+        var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, timeSinceLast, out _);
         var userPrompt = _promptBuilder.BuildUserPrompt(history, entry, shiftDuration, distance);
 
         _pendingRequests.Enqueue(new PendingRequest
@@ -550,6 +575,59 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             PointAtEntity(response.CoreUid, response.Response.PointAt, core.VisionRange);
         }
 
+        // Clear busy flag — new messages will now be queued or start fresh requests
+        _busyCores.Remove(core.CoreId);
+
+        // Dynamic cooldown: scale with response length so the AI doesn't spam
+        // cooldown = clamp(response.Length * charFactor, base, max)
+        var responseLen = message.Length;
+        var cooldown = Math.Clamp(responseLen * core.CooldownCharFactor, core.CooldownBase, core.CooldownMax);
+        var cooldownEnd = _timing.CurTime + TimeSpan.FromSeconds(cooldown);
+
+        // Only override delay if it's shorter than our calculated cooldown
+        if (!_coreDelays.TryGetValue(core.CoreId, out var existingDelay) || existingDelay < cooldownEnd)
+            _coreDelays[core.CoreId] = cooldownEnd;
+
+        Log.Debug($"CoyoteAI: Core {core.CoreId} dynamic cooldown {cooldown:F1}s (response len {responseLen})");
+
+        // Auto-continue: if enabled, response is long enough, hasn't set continue=true,
+        // and doesn't end with sentence-terminal punctuation, fire one auto follow-up.
+        if (core.AutoContinue && responseLen >= core.AutoContinueThreshold && !response.Response.Continue
+            && message.Length > 0 && !".!?\"".Contains(message[^1]))
+        {
+            var autoCount = _autoContinueCounts.GetValueOrDefault(core.CoreId, 0);
+            if (autoCount < core.AutoContinueMax)
+            {
+                _autoContinueCounts[core.CoreId] = autoCount + 1;
+                Log.Debug($"CoyoteAI: Auto-continue {autoCount + 1}/{core.AutoContinueMax} for core {core.CoreId}");
+                var shiftDuration = FormatTime(_timing.CurTime);
+                var followupTrigger = new ChatEntry
+                {
+                    Type = "followup",
+                    SpeakerName = "System",
+                    SpeakerSpecies = "",
+                    SpeakerJob = "",
+                    SpeakerAge = 0,
+                    Message = $"Auto-continue. Your previous response was: \"{message}\". Continue your response naturally without repeating yourself.",
+                    Timestamp = _timing.CurTime
+                };
+                var followupHistory = _histories.TryGetValue(core.CoreId, out var h) ? new Queue<ChatEntry>(h) : new Queue<ChatEntry>();
+                followupHistory.Enqueue(followupTrigger);
+                // Don't mark busy — allow this auto-continue to go through immediately
+                var followupUserPrompt = _promptBuilder.BuildUserPrompt(
+                    followupHistory, followupTrigger, shiftDuration,
+                    distance: null);
+                _pendingRequests.Enqueue(new PendingRequest
+                {
+                    CoreUid = response.CoreUid,
+                    Core = core,
+                    SystemPrompt = response.SystemPrompt,
+                    UserPrompt = followupUserPrompt
+                });
+            }
+        }
+
+        // Handle LLM-requested follow-ups (continue: true)
         if (response.Response.Continue)
         {
             Log.Debug($"CoyoteAI: Queuing follow-up for core {response.CoreId}");
@@ -566,6 +644,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             };
             var followupHistory = _histories.TryGetValue(core.CoreId, out var h) ? new Queue<ChatEntry>(h) : new Queue<ChatEntry>();
             followupHistory.Enqueue(followupTrigger);
+            _busyCores.Add(core.CoreId);
             var followupUserPrompt = _promptBuilder.BuildUserPrompt(
                 followupHistory, followupTrigger, shiftDuration,
                 distance: null);
@@ -603,9 +682,15 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.MaxTokens = Math.Max(args.MaxTokens, 1);
         ent.Comp.VisionRange = Math.Clamp(args.VisionRange, 1f, 15f);
         ent.Comp.Enabled = args.Enabled;
+        ent.Comp.CooldownBase = Math.Clamp(args.CooldownBase, 0.1f, 10f);
+        ent.Comp.CooldownCharFactor = Math.Clamp(args.CooldownCharFactor, 0.001f, 0.5f);
+        ent.Comp.CooldownMax = Math.Clamp(args.CooldownMax, 0.1f, 10f);
+        ent.Comp.AutoContinue = args.AutoContinue;
+        ent.Comp.AutoContinueThreshold = Math.Max(args.AutoContinueThreshold, 50);
+        ent.Comp.AutoContinueMax = Math.Clamp(args.AutoContinueMax, 1, 10);
         Dirty(ent);
 
-        _metaData.SetEntityName(ent, args.AiName);
+        _metaData.SetEntityName(ent, $"VIGIL CORE-{args.AiName}");
 
         UpdateConfigUi(ent);
 
@@ -617,6 +702,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         if (_histories.ContainsKey(ent.Comp.CoreId))
             _histories[ent.Comp.CoreId].Clear();
         _coreDelays.Remove(ent.Comp.CoreId);
+        _pendingBatches.Remove(ent.Comp.CoreId);
+        _busyCores.Remove(ent.Comp.CoreId);
+        _autoContinueCounts.Remove(ent.Comp.CoreId);
         _rateLimiter.Reset(ent.Comp.CoreId);
         UpdateConfigUi(ent);
     }
@@ -675,6 +763,55 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         }
     }
 
+    private void ProcessExpiredCooldowns()
+    {
+        var now = _timing.CurTime;
+        List<string> expired = new();
+        foreach (var (coreId, endTime) in _coreDelays)
+        {
+            if (now >= endTime)
+                expired.Add(coreId);
+        }
+        foreach (var coreId in expired)
+        {
+            _coreDelays.Remove(coreId);
+            if (!_pendingBatches.TryGetValue(coreId, out var batch) || batch.Count == 0)
+                continue;
+            _pendingBatches.Remove(coreId);
+
+            var query = EntityQueryEnumerator<CoyoteAICoreComponent, TransformComponent>();
+            while (query.MoveNext(out var uid, out var core, out var xform))
+            {
+                if (core.CoreId != coreId) continue;
+                if (!IsPowered(uid)) break;
+
+                Log.Debug($"CoyoteAI: Processing batch of {batch.Count} for core {coreId}");
+
+                var shiftDuration = FormatTime(now);
+                var manifest = _manifest.GetCrewManifest();
+                var speciesIds = _manifest.GetSpeciesOnStation();
+                var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
+                var lawBlock = BuildLawBlock(core.LawSet);
+                var visionBlock = BuildVisionBlock(uid, core);
+                var history = _histories.TryGetValue(coreId, out var h) ? h : new Queue<ChatEntry>();
+                var userPrompt = batch.Count == 1
+                    ? _promptBuilder.BuildUserPrompt(history, batch[0], shiftDuration, null)
+                    : _promptBuilder.BuildBatchPrompt(history, batch, shiftDuration);
+                var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, GetTimeSinceLastResponse(coreId), out _);
+
+                _busyCores.Add(coreId);
+                _pendingRequests.Enqueue(new PendingRequest
+                {
+                    CoreUid = uid,
+                    Core = core,
+                    SystemPrompt = systemPrompt,
+                    UserPrompt = userPrompt
+                });
+                break;
+            }
+        }
+    }
+
     private void OnInteractUsing(Entity<CoyoteAICoreComponent> ent, ref InteractUsingEvent args)
     {
         EntityUid? idCard = null;
@@ -723,10 +860,10 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
     private void UpdateOwnerDescription(Entity<CoyoteAICoreComponent> ent)
     {
-        var desc = "An experimental neural network core powered by an external intelligence.";
+        var desc = "A VIGIL (Vessel Intelligence & General Integration Layer) core unit. An experimental AI core based on the LLM API system (OpenAI compatible API) by the now bankrupt 'ClosedAI' and their partner 'MicroSloopy', this core gives the LLM all the tools to be able to interact with the world with features such as pointing, speaking, radio, logic channels, vision, descriptions, crew manifest, Story/politic books and other features allowing for your lonely ship to be less lonely! (quality will vary with LLM model used)";
         if (ent.Comp.IsClaimed)
         {
-            desc += $"\nRegistered to: {ent.Comp.OwnerName}";
+            desc += $"\n\nRegistered to: {ent.Comp.OwnerName}";
             desc += $"\nStatus: {(ent.Comp.IsLocked ? "Locked" : "Unlocked")}";
         }
         _metaData.SetEntityDescription(ent, desc);
@@ -831,36 +968,48 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
         var lawBlock = BuildLawBlock(ent.Comp.LawSet);
         var visionBlock = BuildVisionBlock(ent.Owner, ent.Comp);
-        var systemPrompt = _promptBuilder.BuildSystemPrompt(ent.Comp, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, "N/A");
+        var systemPrompt = _promptBuilder.BuildSystemPrompt(ent.Comp, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, "N/A", out var counts);
         var totalEstimatedTokens = (systemPrompt.Length + totalChars) / 4;
 
         var state = new CoyoteAIConfigBuiState(
-            ent.Comp.AiName,
-            ent.Comp.PersonalityPrompt,
-            ent.Comp.ApiEndpoint,
-            ent.Comp.ModelName,
-            ent.Comp.Temperature,
-            ent.Comp.HasApiKeyConfigured,
-            ent.Comp.ReasoningLevel,
-            ent.Comp.LawSet,
-            lawSets,
-            ent.Comp.MaxHistoryLength,
-            ent.Comp.MaxTokens,
-            ent.Comp.Enabled,
-            history.Count,
-            estimatedTokens,
-            totalEstimatedTokens,
-            ent.Comp.ChannelStates,
-            ent.Comp.OwnerName,
-            ent.Comp.IsLocked,
-            ent.Comp.IsClaimed,
-            ent.Comp.IsLocked && ent.Comp.IsClaimed,
-            ent.Comp.ShowPeople,
-            ent.Comp.ShowMachines,
-            ent.Comp.ShowMachinesDetail,
-            ent.Comp.ShowItems,
-            ent.Comp.ShowItemsDetail,
-            ent.Comp.VisionRange
+            aiName: ent.Comp.AiName,
+            personalityPrompt: ent.Comp.PersonalityPrompt,
+            apiEndpoint: ent.Comp.ApiEndpoint,
+            modelName: ent.Comp.ModelName,
+            temperature: ent.Comp.Temperature,
+            hasApiKey: ent.Comp.HasApiKeyConfigured,
+            reasoningLevel: ent.Comp.ReasoningLevel,
+            lawSet: ent.Comp.LawSet,
+            availableLawSets: lawSets,
+            maxHistory: ent.Comp.MaxHistoryLength,
+            maxTokens: ent.Comp.MaxTokens,
+            enabled: ent.Comp.Enabled,
+            historyLength: history.Count,
+            estimatedTokens: estimatedTokens,
+            totalEstimatedTokens: totalEstimatedTokens,
+            channelStates: ent.Comp.ChannelStates,
+            ownerName: ent.Comp.OwnerName,
+            isLocked: ent.Comp.IsLocked,
+            isClaimed: ent.Comp.IsClaimed,
+            lockedView: ent.Comp.IsLocked && ent.Comp.IsClaimed,
+            showPeople: ent.Comp.ShowPeople,
+            showMachines: ent.Comp.ShowMachines,
+            showMachinesDetail: ent.Comp.ShowMachinesDetail,
+            showItems: ent.Comp.ShowItems,
+            showItemsDetail: ent.Comp.ShowItemsDetail,
+            visionRange: ent.Comp.VisionRange,
+            tokenSystem: counts.System / 4,
+            tokenPersonLore: counts.PersonLore / 4,
+            tokenCrewXeno: counts.CrewXeno / 4,
+            tokenVision: counts.Vision / 4,
+            tokenHistory: totalChars / 4,
+            tokenContext: 0,
+            cooldownBase: ent.Comp.CooldownBase,
+            cooldownCharFactor: ent.Comp.CooldownCharFactor,
+            cooldownMax: ent.Comp.CooldownMax,
+            autoContinue: ent.Comp.AutoContinue,
+            autoContinueThreshold: ent.Comp.AutoContinueThreshold,
+            autoContinueMax: ent.Comp.AutoContinueMax
         );
         state.RefreshOnly = refreshOnly;
         _ui.SetUiState(ent.Owner, CoyoteAICoreUiKey.Config, state);
