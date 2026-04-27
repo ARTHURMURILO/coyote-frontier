@@ -6,26 +6,30 @@
   sprites: MobAvaliSprites
   defaultSkinTone: "#D2B48C"
   markingLimits: MobAvaliMarkingLimits
-  dollPrototype: MobAvaliDummy
+  dollPrototype: AppearanceAvali
   skinColoration: Hues
   maleFirstNames: names_avali_first
   femaleFirstNames: names_avali_first
   lastNames: names_avali_packs
   naming: FirstLast
-  # CS: Remove Min-age
+  minAge: 23
   youngAge: 103
   oldAge: 257
-  maxAge: 430
-  minHeight: 0.8
-  defaultHeight: 0.91
-  maxHeight: 1
-  sexes:
-    - Unsexed
-    - Male
-    - Female
+  # CS: Small enough to fit in a bag
+  minHeight: 0.6
+  defaultHeight: 0.8
+  maxHeight: 1.1
+  minWidth: 0.55
+  defaultWidth: 0.8
+  maxWidth: 1.15
+  # End CS
+  # CS: Can't use customeName
+  # CS: Need Kind for some reason
   kind:
-  - RaptorLike
-  # CS: CustomName cause error
+    - BasicHumanlike
+    - BasicFurry
+  # End CS
+
 - type: speciesBaseSprites
   id: MobAvaliSprites
   sprites:
@@ -45,6 +49,16 @@
     RLeg: MobAvaliRLeg
     LFoot: MobAvaliLFoot
     RFoot: MobAvaliRFoot
+    # CS Start
+    Special: MobHumanoidAnyMarking
+    TailBehind: MobHumanoidAnyMarking
+    TailOversuit: MobHumanoidAnyMarking
+    Hair: MobHumanoidAnyMarking
+    FacialHair: MobHumanoidAnyMarking
+    Snout: MobHumanoidAnyMarking
+    Genital: MobHumanoidAnyMarking
+    RArmExtension: MobHumanoidAnyMarking # Adds Wing Slot, this will look weird as fuck
+    # End CS
 
 - type: humanoidBaseSprite
   id: MobAvaliEyes
@@ -54,43 +68,16 @@
 
 - type: markingPoints
   id: MobAvaliMarkingLimits
-  # CS: Allow all markings
+  # CS: Unlimited markings because why not
   points:
-    Hair:
-      points: 1
-      required: false
-    FacialHair:
-      points: 0
-      required: false
     Tail:
-      points: 1
       required: true
+      points: 999
       defaultMarkings: [ AvaliTailBase ]
-    Snout:
-      points: 1
-      required: false
-    HeadTop:
-      points: 1
-      required: false
     HeadSide:
-      points: 1
       required: true
+      points: 999
       defaultMarkings: [ AvaliEarsBase ]
-    Chest:
-      points: 1
-      required: false
-    Legs:
-      points: 2
-      required: false
-    UndergarmentTop:
-      points: 1
-      required: false
-    UndergarmentBottom:
-      points: 1
-      required: false
-    Arms:
-      points: 4
-      required: false
 
 - type: humanoidBaseSprite
   id: MobAvaliHead

@@ -6,6 +6,8 @@ shuttle-console-iff-search = Search IFF
 shuttle-console-inertia-dampener-off = Cruise
 shuttle-console-inertia-dampener-dampen = Drive
 shuttle-console-inertia-dampener-anchor = Park
+shuttle-console-proximity-alert = Proximity Alert
+shuttle-console-proximity-alert-radius = Proximity Radius (m)
 
 shuttle-console-service-flags = Advertise Features
 shuttle-console-service-flag-Services-label = Services

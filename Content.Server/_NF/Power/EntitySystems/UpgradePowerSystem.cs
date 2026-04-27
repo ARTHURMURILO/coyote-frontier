@@ -38,7 +38,7 @@ public sealed class UpgradePowerSystem : EntitySystem
     private void OnRefreshParts(EntityUid uid, UpgradePowerDrawComponent component, RefreshPartsEvent args)
     {
         var load = component.BaseLoad;
-        var rating = args.PartRatings[component.MachinePartPowerDraw];
+        var rating = GetNormalizedRating(args, component.MachinePartPowerDraw, component.ExpectedPartCount);
         switch (component.Scaling)
         {
             case MachineUpgradeScalingType.Linear:
@@ -56,6 +56,25 @@ public sealed class UpgradePowerSystem : EntitySystem
             powa.Load = load;
         if (TryComp<PowerConsumerComponent>(uid, out var powa2))
             powa2.DrawRate = load;
+    }
+
+    private static float GetNormalizedRating(RefreshPartsEvent args, string partType, int expectedPartCount)
+    {
+        var averageRating = args.PartRatings[partType];
+        if (expectedPartCount <= 1)
+            return averageRating;
+
+        var quantity = 0;
+        foreach (var state in args.Parts)
+        {
+            if (state.Part.PartType != partType)
+                continue;
+
+            quantity += state.Quantity();
+        }
+
+        var fillRatio = MathF.Min(1f, quantity / (float) expectedPartCount);
+        return 1f + (averageRating - 1f) * fillRatio;
     }
 
     private void OnUpgradeExamine(EntityUid uid, UpgradePowerDrawComponent component, UpgradeExamineEvent args)

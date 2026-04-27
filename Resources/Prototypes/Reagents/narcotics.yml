@@ -296,15 +296,22 @@
   metabolisms:
     Narcotic:
       effects:
-      - !type:GenericStatusEffect
-        conditions:
-        - !type:ReagentThreshold
-          reagent: Nocturine
-          min: 8
-        key: ForcedSleep
-        component: ForcedSleeping
-        refresh: false
-        type: Add
+      - !type:Emote
+        emote: Yawn
+        showInChat: true
+        probability: 0.1
+      - !type:MovespeedModifier
+        walkSpeedModifier: 0.65
+        sprintSpeedModifier: 0.65
+#      - !type:GenericStatusEffect   # Coyote edit: this chem has been castrated until it is no longer a hard shutdown
+#        conditions:
+#        - !type:ReagentThreshold
+#          reagent: Nocturine
+#          min: 8
+#        key: ForcedSleep
+#        component: ForcedSleeping
+#        refresh: false
+#        type: Add
 
 - type: reagent
   id: MuteToxin

@@ -31,3 +31,28 @@
   components:
     - type: MachineBoard
       prototype: EdisonTechFab
+
+- type: entity
+  id: WallmountForceFieldGeneratorMachineCircuitboard
+  parent: BaseMachineCircuitboard
+  name: field matrix core
+  description: A supercharged machine circuit board for a wallmount force field generator.
+  components:
+    - type: Tag
+      tags:
+      - WallmountForceFieldGeneratorElectronics
+    - type: Sprite
+      state: cpuboard_super
+    - type: MachineBoard
+      prototype: WallmountForceFieldGenerator
+      requirements:
+        Capacitor: 4
+        PowerCell: 4
+      stackRequirements:
+        Cable: 2
+    - type: PhysicalComposition
+      materialComposition:
+        Steel: 20
+        Glass: 10
+    - type: StaticPrice
+      price: 25000

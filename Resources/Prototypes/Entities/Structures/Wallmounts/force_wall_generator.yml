@@ -1,0 +1,173 @@
+- type: entity
+  abstract: true
+  id: BaseWallmountForceFieldGenerator
+  parent: BaseStructure
+  name: wallmount force field generator
+  description: A wall-mounted generator that projects linked holographic force fields between paired units when powered.
+  placement:
+    mode: SnapgridCenter
+    snap:
+      - Wallmount
+  components:
+  - type: Clickable
+  - type: InteractionOutline
+  - type: Anchorable
+  - type: Transform
+    anchored: true
+    noRot: false
+  - type: Physics
+    bodyType: Static
+    canCollide: true
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeCircle
+          radius: 0.2
+        hard: true
+        layer:
+        - MachineLayer
+  - type: Sprite
+    drawdepth: WallMountedItems
+    sprite: Structures/Power/Generation/wallmount_forcefield_generator.rsi
+    noRot: false
+    layers:
+    - state: panel
+    - state: on
+      map: ["connectedLight"]
+      visible: false
+      shader: unshaded
+    - state: warning
+      map: ["warningLight"]
+      visible: false
+      shader: unshaded
+  - type: Appearance
+  - type: GenericVisualizer
+    visuals:
+      enum.WallmountForceFieldGeneratorVisuals.OnLight:
+        connectedLight:
+          True: { visible: true }
+          False: { visible: false }
+      enum.WallmountForceFieldGeneratorVisuals.WarningLight:
+        warningLight:
+          True: { visible: true }
+          False: { visible: false }
+  - type: Battery
+    maxCharge: 30000
+    startingCharge: 30000
+  - type: ApcPowerReceiver
+    powerLoad: 50000
+  - type: ExtensionCableReceiver
+  - type: Machine
+    board: WallmountForceFieldGeneratorMachineCircuitboard
+  - type: ContainerContainer
+    containers:
+      machine_board: !type:Container
+      machine_parts: !type:Container
+  - type: Construction
+    graph: WallmountForceFieldGenerator
+    node: generator
+    containers:
+    - machine_board
+    - machine_parts
+  - type: UpgradePowerDraw
+    machinePartPowerDraw: Capacitor
+    expectedPartCount: 4
+    scaling: Exponential
+    powerDrawMultiplier: 0.3107
+  - type: UpgradeBattery
+    machinePartPowerCapacity: PowerCell
+    expectedPartCount: 4
+    maxChargeMultiplier: 2
+    baseMaxCharge: 30000
+  - type: WallMount
+  - type: WallmountForceFieldGenerator
+    createdField: WallmountLinkedForceField
+    maxLength: 16
+    damagePowerDrawPerDamage: 800
+    batteryChargeRate: 300
+    batteryDrainConnected: 0
+    idlePowerLoad: 500
+  - type: DeviceLinkSink
+    ports:
+    - On
+    - Off
+    - Toggle
+  - type: AmbientSound
+    enabled: false
+    volume: -9
+    range: 5
+    sound:
+      path: /Audio/_NF/Ambience/force-field.ogg
+  - type: PointLight
+    enabled: true
+    color: "#4080FF"
+    radius: 3
+    energy: 0.4
+    softness: 2.0
+
+- type: entity
+  id: WallmountForceFieldGenerator
+  parent: BaseWallmountForceFieldGenerator
+  name: wallmount force field generator
+
+- type: entity
+  id: WallmountForceFieldGeneratorFrame
+  categories: [ HideSpawnMenu ]
+  name: wallmount force field generator frame
+  description: A construction frame for a wallmount force field generator.
+  placement:
+    mode: SnapgridCenter
+    snap:
+    - Wallmount
+  components:
+  - type: Clickable
+  - type: InteractionOutline
+  - type: Physics
+    canCollide: false
+  - type: Fixtures
+  - type: Transform
+    anchored: true
+  - type: Sprite
+    drawdepth: WallMountedItems
+    sprite: Structures/Power/Generation/wallmount_forcefield_generator.rsi
+    layers:
+    - state: panel
+  - type: Construction
+    graph: WallmountForceFieldGenerator
+    node: frame
+  - type: WallMount
+
+- type: entity
+  id: WallmountLinkedForceField
+  name: holographic force field
+  description: A linked hard-light wall generated between paired wallmount force field generators.
+  placement:
+    mode: SnapgridCenter
+  components:
+  - type: InteractionOutline
+  - type: Clickable
+  - type: Physics
+    bodyType: Static
+    canCollide: true
+  - type: Fixtures
+    fixtures:
+      fix1:
+        shape:
+          !type:PhysShapeAabb
+          bounds: "-0.5,-0.5,0.5,0.5"
+        mask:
+        - FullTileMask
+        layer:
+        - GlassLayer
+  - type: Sprite
+    sprite: Structures/Holo/field.rsi
+    state: icon
+    noRot: true
+  - type: Damageable
+    damageContainer: Inorganic
+    damageModifierSet: Metallic
+  - type: ContainmentField
+    throwForce: 1
+    destroyGarbage: false
+  - type: SyncSprite

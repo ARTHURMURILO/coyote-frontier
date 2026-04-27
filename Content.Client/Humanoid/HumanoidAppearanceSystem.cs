@@ -404,6 +404,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 ApplyMarking(
                     newMarkingPrototype,
                     newMarking.MarkingColors,
+                    newMarking.MarkingGlow,
                     newMarking.Visible,
                     humanoid,
                     sprite);
@@ -495,12 +496,20 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
             spriteComp.LayerMapRemove(layerId);
             spriteComp.RemoveLayer(index);
+
+            var glowLayerId = $"{layerId}-glow";
+            if (!spriteComp.LayerMapTryGet(glowLayerId, out var glowIndex))
+                continue;
+
+            spriteComp.LayerMapRemove(glowLayerId);
+            spriteComp.RemoveLayer(glowIndex);
         }
     }
 
     private void ApplyMarking(
         MarkingPrototype markingPrototype,
         IReadOnlyList<Color>? colors,
+        IReadOnlyList<float>? glowLevels,
         bool visible,
         HumanoidAppearanceComponent humanoid,
         SpriteComponent sprite)
@@ -510,6 +519,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
         // cus we might need to access it by filename to link
         // one sprite's colors to another
         var colorDict = new Dictionary<string, Color>();
+        var glowDict = new Dictionary<string, float>();
         for (var i = 0; i < markingPrototype.Sprites.Count; i++)
         {
             var spriteName = markingPrototype.Sprites[i] switch
@@ -525,6 +535,11 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                     colorDict.Add(spriteName, colors[i]);
                 else
                     colorDict.Add(spriteName, Color.White);
+
+                if (glowLevels != null && i < glowLevels.Count)
+                    glowDict.Add(spriteName, Math.Clamp(glowLevels[i], 0f, 1f));
+                else
+                    glowDict.Add(spriteName, 0f);
             }
         }
         // now, rearrange them, copying any parented colors to children set to
@@ -536,6 +551,11 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 if (colorDict.TryGetValue(parent, out var color))
                 {
                     colorDict[child] = color;
+                }
+
+                if (glowDict.TryGetValue(parent, out var glow))
+                {
+                    glowDict[child] = glow;
                 }
             }
         }
@@ -587,7 +607,9 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                        && setting.AllowsMarkings;
 
             var layerId = $"{markingPrototype.ID}-{rsi.RsiState}";
+            var glowLayerId = $"{layerId}-glow";
             // FLOOF CHANGE END
+            var targLayerAdj = targetLayer + layerDict[layerSlot.ToString()] + 1;
 
 
             if (!sprite.LayerMapTryGet(layerId, out _))
@@ -596,7 +618,6 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
                 // adding 1 to the layer index makes it not be behind
                 // everything. fun! FLOOF ADD =3
                 // var targLayerAdj = targetLayer == 0 ? 0 + j : targetLayer + j + 1;
-                var targLayerAdj = targetLayer + layerDict[layerSlot.ToString()] + 1;
                 var layer = sprite.AddLayer(markingSprite, targLayerAdj);
                 sprite.LayerMapSet(layerId, layer);
                 sprite.LayerSetSprite(layerId, rsi);
@@ -613,6 +634,11 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
 
             if (!visible || setting == null) // this is kinda implied
             {
+                if (sprite.LayerMapTryGet(glowLayerId, out var hiddenGlowIndex))
+                {
+                    sprite.LayerMapRemove(glowLayerId);
+                    sprite.RemoveLayer(hiddenGlowIndex);
+                }
                 continue;
             }
 
@@ -620,7 +646,30 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             // and we need to check the index is correct.
             // So if that happens just default to white?
             // FLOOF ADD =3
-            sprite.LayerSetColor(layerId, colorDict.TryGetValue(rsi.RsiState, out var color) ? color : Color.White);
+            var color = colorDict.TryGetValue(rsi.RsiState, out var targetColor) ? targetColor : Color.White;
+            var glowFactor = glowDict.TryGetValue(rsi.RsiState, out var targetGlow) ? targetGlow : 0f;
+
+            sprite.LayerSetColor(layerId, color.WithAlpha(color.A * (1f - glowFactor)));
+
+            if (glowFactor > 0f)
+            {
+                if (!sprite.LayerMapTryGet(glowLayerId, out _))
+                {
+                    var glowLayer = sprite.AddLayer(markingSprite, targLayerAdj + 1);
+                    sprite.LayerMapSet(glowLayerId, glowLayer);
+                    sprite.LayerSetSprite(glowLayerId, rsi);
+                }
+
+                sprite.LayerSetShader(glowLayerId, "unshaded");
+                sprite.LayerSetVisible(glowLayerId, visible);
+                sprite.LayerSetColor(glowLayerId, color.WithAlpha(color.A * glowFactor));
+                humanoid.ClientElderMarkings.Add(glowLayerId);
+            }
+            else if (sprite.LayerMapTryGet(glowLayerId, out var glowIndex))
+            {
+                sprite.LayerMapRemove(glowLayerId);
+                sprite.RemoveLayer(glowIndex);
+            }
 
             if (humanoid.MarkingsDisplacement.TryGetValue(markingPrototype.BodyPart, out DisplacementData? displacementData)
                 && markingPrototype.CanBeDisplaced)
@@ -721,7 +770,7 @@ public sealed class HumanoidAppearanceSystem : SharedHumanoidAppearanceSystem
             foreach (var marking in markingList)
             {
                 if (_markingManager.TryGetMarking(marking, out var markingPrototype) && markingPrototype.BodyPart == layer)
-                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.Visible, ent, sprite);
+                    ApplyMarking(markingPrototype, marking.MarkingColors, marking.MarkingGlow, marking.Visible, ent, sprite);
             }
         }
     }

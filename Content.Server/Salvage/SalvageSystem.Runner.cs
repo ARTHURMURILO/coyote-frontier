@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Numerics;
+using System.Collections.Generic;
 using Content.Server.Salvage.Expeditions;
 using Content.Server.Shuttles.Components;
 using Content.Server.Shuttles.Events;
@@ -21,6 +22,7 @@ using Content.Server.Body.Components;
 using Content.Server.Buckle.Systems;
 using Content.Server.Temperature.Components;
 using Content.Server.Temperature.Systems;
+using Content.Server.Power.Components;
 using Content.Shared._CS;
 using Content.Shared.Atmos;
 using Content.Shared.Buckle.Components;
@@ -50,6 +52,7 @@ public sealed partial class SalvageSystem
     [Dependency] private readonly IPlayerManager _players = default!;
     [Dependency] private readonly DamageableSystem _damageable = default!;
     [Dependency] private readonly TemperatureSystem _temperature = default!;
+    private readonly Dictionary<EntityUid, TimeSpan> _pausedExpeditionRemaining = new();
 
     private void InitializeRunner()
     {
@@ -138,7 +141,9 @@ public sealed partial class SalvageSystem
         }
         // End Frontier: early finish
 
-        Announce(args.MapUid, Loc.GetString("salvage-expedition-announcement-countdown-minutes", ("duration", (component.EndTime - _timing.CurTime).Minutes)));
+        var arrivalRemaining = component.EndTime - _timing.CurTime;
+        var arrivalMinutes = GetDisplayedRemainingMinutes(arrivalRemaining);
+        Announce(args.MapUid, Loc.GetString("salvage-expedition-announcement-countdown-minutes", ("duration", arrivalMinutes)));
 
         // list all the ssd goobers on the expedition
         UpdateSsdGoobers(args.MapUid, component);
@@ -218,7 +223,55 @@ public sealed partial class SalvageSystem
         // Run the basic mission timers (e.g. announcements, auto-FTL, completion, etc)
         while (query.MoveNext(out var uid, out var comp))
         {
+            // If this expedition was just created, stale pause-cache from a recycled entity UID must not apply.
+            if (comp.Stage == ExpeditionStage.Added)
+                _pausedExpeditionRemaining.Remove(uid);
+
             var remaining = comp.EndTime - _timing.CurTime;
+            if (remaining < TimeSpan.Zero)
+                remaining = TimeSpan.Zero;
+
+            // Frontier: pause countdown only when an expedition-extending anchor is actively powered on a shuttle grid on this map.
+            var expeditionExtended = false;
+            var anchorQuery = EntityQueryEnumerator<StationAnchorComponent, TransformComponent, PowerChargeComponent>();
+            while (anchorQuery.MoveNext(out _, out var anchor, out var anchorXform, out var anchorPower))
+            {
+                if (!anchor.ExtendDuration)
+                    continue;
+
+                if (!anchor.SwitchedOn || !anchorPower.Active)
+                    continue;
+
+                if (anchorXform.MapUid != uid || !anchorXform.GridUid.HasValue)
+                    continue;
+
+                if (!HasComp<ShuttleComponent>(anchorXform.GridUid.Value))
+                    continue;
+
+                expeditionExtended = true;
+                break;
+            }
+
+            if (expeditionExtended)
+            {
+                if (!_pausedExpeditionRemaining.TryGetValue(uid, out var pausedRemaining))
+                {
+                    pausedRemaining = remaining;
+                    _pausedExpeditionRemaining[uid] = pausedRemaining;
+                }
+
+                // Keep pushing EndTime forward while preserving the exact frozen remaining time.
+                comp.EndTime = _timing.CurTime + pausedRemaining;
+                continue;
+            }
+
+            if (_pausedExpeditionRemaining.Remove(uid, out var resumeRemaining))
+            {
+                comp.EndTime = _timing.CurTime + resumeRemaining;
+                remaining = resumeRemaining;
+            }
+            // End Frontier: expedition duration extension
+
             var audioLength = _audio.GetAudioLength(comp.SelectedSong);
 
             AbortIfWiped(uid, comp); // Frontier
@@ -238,13 +291,15 @@ public sealed partial class SalvageSystem
                 // End Frontier
                 comp.Stage = ExpeditionStage.MusicCountdown;
                 Dirty(uid, comp);
-                Announce(uid, Loc.GetString("salvage-expedition-announcement-countdown-minutes", ("duration", audioLength.Minutes)));
+                var musicMinutes = GetDisplayedRemainingMinutes(remaining);
+                Announce(uid, Loc.GetString("salvage-expedition-announcement-countdown-minutes", ("duration", musicMinutes)));
             }
             else if (comp.Stage < ExpeditionStage.Countdown && remaining < TimeSpan.FromMinutes(5)) // Frontier: 4<5
             {
                 comp.Stage = ExpeditionStage.Countdown;
                 Dirty(uid, comp);
-                Announce(uid, Loc.GetString("salvage-expedition-announcement-countdown-minutes", ("duration", TimeSpan.FromMinutes(5).Minutes)));
+                var countdownMinutes = GetDisplayedRemainingMinutes(remaining);
+                Announce(uid, Loc.GetString("salvage-expedition-announcement-countdown-minutes", ("duration", countdownMinutes)));
             }
             // Auto-FTL out any shuttles
             else if (remaining < TimeSpan.FromSeconds(_shuttle.DefaultStartupTime) + TimeSpan.FromSeconds(0.5))
@@ -302,12 +357,12 @@ public sealed partial class SalvageSystem
                                         shuttleGrid.Value);
                                     Spawn("EffectSparks", Transform(mobUid).Coordinates);
                                     Spawn("EffectGravityPulse", Transform(mobUid).Coordinates);
-                                    SoundSpecifier Sound = new SoundPathSpecifier("/Audio/_CS/ExpedReturnToBed.ogg");
-                                    _audio.PlayPvs(Sound, mobUid);
+                                    SoundSpecifier sound = new SoundPathSpecifier("/Audio/_CS/ExpedReturnToBed.ogg");
+                                    _audio.PlayPvs(sound, mobUid);
                                 }
                             }
 
-                                // Destination generator parameters (move to CVAR?)
+                            // Destination generator parameters (move to CVAR?)
                             int numRetries = 20; // Maximum number of retries
                             float minDistance = 200f; // Minimum distance from another object, in meters
                             float minRange = 750f; // Minimum distance from sector centre, in meters
@@ -777,5 +832,13 @@ public sealed partial class SalvageSystem
             // they are ssd, add them to the list
             component.InitialSsdGoobers.Add(uid);
         }
+    }
+
+    private static int GetDisplayedRemainingMinutes(TimeSpan remaining)
+    {
+        if (remaining <= TimeSpan.Zero)
+            return 0;
+
+        return Math.Max(1, (int)Math.Ceiling(remaining.TotalMinutes));
     }
 }

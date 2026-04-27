@@ -9,6 +9,7 @@ using Robust.Client.UserInterface.XAML;
 using Robust.Client.Utility;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
+using System.Numerics;
 using System.Linq;
 using static Robust.Client.UserInterface.Controls.BoxContainer;
 
@@ -30,6 +31,7 @@ public sealed partial class MarkingPicker : Control
     public Action<HumanoidLegStyle>? OnLegStyleChanged;
 
     private List<Color> _currentMarkingColors = new();
+    private List<float> _currentMarkingGlow = new();
 
     private ItemList.Item? _selectedMarking;
     private ItemList.Item? _selectedUnusedMarking;
@@ -57,7 +59,7 @@ public sealed partial class MarkingPicker : Control
 
     public string IgnoreCategories
     {
-        get => string.Join(',',  _ignoreCategories);
+        get => string.Join(',', _ignoreCategories);
         set
         {
             _ignoreCategories.Clear();
@@ -223,10 +225,10 @@ public sealed partial class MarkingPicker : Control
 
         foreach (var legStyle in _availableLegStyles)
         {
-            CMarkingLegStyle.AddItem(Loc.GetString($"humanoid-leg-style-{legStyle.ToString()}"), (int) legStyle);
+            CMarkingLegStyle.AddItem(Loc.GetString($"humanoid-leg-style-{legStyle.ToString()}"), (int)legStyle);
         }
 
-        CMarkingLegStyle.SelectId((int) CurrentLegStyle);
+        CMarkingLegStyle.SelectId((int)CurrentLegStyle);
     }
 
     private string GetMarkingName(MarkingPrototype marking) => Loc.GetString($"marking-{marking.ID}");
@@ -318,7 +320,7 @@ public sealed partial class MarkingPicker : Control
             var text = Loc.GetString(marking.Forced ? "marking-used-forced" : "marking-used", ("marking-name", $"{GetMarkingName(newMarking)}"),
                 ("marking-category", Loc.GetString($"markings-category-{newMarking.MarkingCategory}")));
 
-            var _item = new ItemList.Item(CMarkingsUsed)
+            var item = new ItemList.Item(CMarkingsUsed)
             {
                 Text = text,
                 Icon = _sprite.Frame0(newMarking.Sprites[0]),
@@ -327,7 +329,7 @@ public sealed partial class MarkingPicker : Control
                 IconModulate = marking.MarkingColors[0]
             };
 
-            CMarkingsUsed.Add(_item);
+            CMarkingsUsed.Add(item);
         }
 
         // since all the points have been processed, update the points visually
@@ -452,7 +454,7 @@ public sealed partial class MarkingPicker : Control
     private void OnUsedMarkingSelected(ItemList.ItemListSelectedEventArgs item)
     {
         _selectedMarking = CMarkingsUsed[item.ItemIndex];
-        var prototype = (MarkingPrototype) _selectedMarking.Metadata!;
+        var prototype = (MarkingPrototype)_selectedMarking.Metadata!;
         int markingIndex = _currentMarkings.FindIndexOf(_selectedMarkingCategory, prototype.ID);
 
         if (markingIndex < 0) return;
@@ -468,8 +470,8 @@ public sealed partial class MarkingPicker : Control
 
         var stateNames = GetMarkingStateNames(prototype);
         _currentMarkingColors.Clear();
+        _currentMarkingGlow.Clear();
         CMarkingColors.DisposeAllChildren();
-        List<ColorSelectorSliders> colorSliders = new();
         for (int i = 0; i < prototype.Sprites.Count; i++)
         {
             // first, check if the coloration is parented to another marking
@@ -500,11 +502,11 @@ public sealed partial class MarkingPicker : Control
             // this is a problem if we, say, want to *not* show a certain slider
             // cus then it'll modify the wrong color, unless the color happened to
             // be in index 0.
-            if(!skipdraw)
+            if (!skipdraw)
                 CMarkingColors.AddChild(colorContainer);
 
             ColorSelectorSliders colorSelector = new ColorSelectorSliders();
-            colorSliders.Add(colorSelector);
+            colorSelector.IsAlphaVisible = true;
 
             colorContainer.AddChild(new Label { Text = $"{stateNames[i]} color:" });
             colorContainer.AddChild(colorSelector);
@@ -515,10 +517,13 @@ public sealed partial class MarkingPicker : Control
             var currentColor = new Color(
                 color.RByte,
                 color.GByte,
-                color.BByte
+                color.BByte,
+                color.AByte
             );
             colorSelector.Color = currentColor;
             _currentMarkingColors.Add(currentColor);
+            var currentGlow = i < marking.MarkingGlow.Count ? marking.MarkingGlow[i] : 0f;
+            _currentMarkingGlow.Add(Math.Clamp(currentGlow, 0f, 1f));
             var colorIndex = _currentMarkingColors.Count - 1;
 
             Action<Color> colorChanged = _ =>
@@ -528,6 +533,45 @@ public sealed partial class MarkingPicker : Control
                 ColorChanged(colorIndex);
             };
             colorSelector.OnColorChanged += colorChanged;
+
+            if (skipdraw)
+                continue;
+
+            var glowRow = new BoxContainer
+            {
+                Orientation = LayoutOrientation.Horizontal,
+                SeparationOverride = 8,
+            };
+            var glowLabel = new Label
+            {
+                Text = Loc.GetString("marking-glow-label"),
+            };
+            var glowSlider = new Slider
+            {
+                HorizontalExpand = true,
+                MinValue = 0f,
+                MaxValue = 1f,
+                Rounded = false,
+            };
+            var glowValue = new Label
+            {
+                MinSize = new Vector2(42f, 0f)
+            };
+
+            glowSlider.SetValueWithoutEvent(_currentMarkingGlow[colorIndex]);
+            glowValue.Text = FormatGlowValue(_currentMarkingGlow[colorIndex]);
+
+            glowSlider.OnValueChanged += _ =>
+            {
+                _currentMarkingGlow[colorIndex] = Math.Clamp(glowSlider.Value, 0f, 1f);
+                glowValue.Text = FormatGlowValue(_currentMarkingGlow[colorIndex]);
+                GlowChanged(colorIndex);
+            };
+
+            glowRow.AddChild(glowLabel);
+            glowRow.AddChild(glowSlider);
+            glowRow.AddChild(glowValue);
+            colorContainer.AddChild(glowRow);
         }
 
         CustomNameTextEdit.Text = marking.CustomName ?? "";
@@ -587,7 +631,7 @@ public sealed partial class MarkingPicker : Control
     private void ColorChanged(int colorIndex)
     {
         if (_selectedMarking is null) return;
-        var markingPrototype = (MarkingPrototype) _selectedMarking.Metadata!;
+        var markingPrototype = (MarkingPrototype)_selectedMarking.Metadata!;
         int markingIndex = _currentMarkings.FindIndexOf(_selectedMarkingCategory, markingPrototype.ID);
 
         if (markingIndex < 0) return;
@@ -599,6 +643,26 @@ public sealed partial class MarkingPicker : Control
         _currentMarkings.Replace(_selectedMarkingCategory, markingIndex, marking);
 
         OnMarkingDataChanged?.Invoke(_currentMarkings);
+    }
+
+    private void GlowChanged(int glowIndex)
+    {
+        if (_selectedMarking is null) return;
+        var markingPrototype = (MarkingPrototype)_selectedMarking.Metadata!;
+        int markingIndex = _currentMarkings.FindIndexOf(_selectedMarkingCategory, markingPrototype.ID);
+
+        if (markingIndex < 0) return;
+
+        var marking = new Marking(_currentMarkings.Markings[_selectedMarkingCategory][markingIndex]);
+        marking.SetGlow(glowIndex, _currentMarkingGlow[glowIndex]);
+        _currentMarkings.Replace(_selectedMarkingCategory, markingIndex, marking);
+
+        OnMarkingDataChanged?.Invoke(_currentMarkings);
+    }
+
+    private static string FormatGlowValue(float glow)
+    {
+        return Loc.GetString("marking-glow-value", ("value", (int)(Math.Clamp(glow, 0f, 1f) * 100f)));
     }
 
     private void SetCanToggle(bool canToggle)
@@ -724,7 +788,7 @@ public sealed partial class MarkingPicker : Control
             return;
         }
 
-        var marking = (MarkingPrototype) _selectedUnusedMarking.Metadata!;
+        var marking = (MarkingPrototype)_selectedUnusedMarking.Metadata!;
         var markingObject = marking.AsMarking();
 
         // We need add hair markings in cloned set manually because _currentMarkings doesn't have it
@@ -798,7 +862,7 @@ public sealed partial class MarkingPicker : Control
     {
         if (_selectedMarking is null) return;
 
-        var marking = (MarkingPrototype) _selectedMarking.Metadata!;
+        var marking = (MarkingPrototype)_selectedMarking.Metadata!;
 
         _currentMarkings.Remove(_selectedMarkingCategory, marking.ID);
 

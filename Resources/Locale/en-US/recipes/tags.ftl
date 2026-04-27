@@ -49,6 +49,7 @@ construction-graph-tag-igniter = an igniter
 construction-graph-tag-modular-receiver = modular receiver
 construction-graph-tag-power-cell-small = power cell small
 construction-graph-tag-power-cell = power cell
+construction-graph-tag-capacitor = capacitor
 construction-graph-tag-potato-battery = a potato battery
 construction-graph-tag-super-compact-ai-chip = a super-compact AI chip
 
@@ -122,6 +123,7 @@ construction-graph-tag-brig-timer-electronics = brig timer electronics
 construction-graph-tag-wallmount-generator-circuit-board = wallmount generator circuit board
 construction-graph-tag-wallmount-apu-circuit-board = wallmount APU circuit board
 construction-graph-tag-wallmount-substation-circuit-board = wallmount substation circuit board
+construction-graph-tag-field-matrix-core = field matrix core
 construction-graph-tag-surveillance-camera-monitor-board = surveillance camera monitor board
 construction-graph-tag-television-board = television board
 construction-graph-tag-freezer-electronics = freezer electronics

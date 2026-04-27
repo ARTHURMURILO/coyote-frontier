@@ -32,6 +32,8 @@ marking-toggle-other-default-verb-off = takes off
 marking-sample-text = Sample:
 marking-show-sample-text = Show Sample Text
 marking-hide-sample-text = Hide Sample Text
+marking-glow-label = Glow
+marking-glow-value = {$value}%
 
 # Categories
 

@@ -113,11 +113,16 @@ public sealed partial class SalvageSystem
 
     private void OnExpeditionMapInit(EntityUid uid, SalvageExpeditionComponent component, MapInitEvent args)
     {
+        // Ensure any old pause cache for a reused map UID cannot affect a fresh expedition.
+        _pausedExpeditionRemaining.Remove(uid);
         component.SelectedSong = _audio.ResolveSound(component.Sound);
     }
 
     private void OnExpeditionShutdown(EntityUid uid, SalvageExpeditionComponent component, ComponentShutdown args)
     {
+        // Drop pause cache when expedition map is shutting down.
+        _pausedExpeditionRemaining.Remove(uid);
+
         // component.Stream = _audio.Stop(component.Stream); // Frontier: moved to client
 
         foreach (var (job, cancelToken) in _salvageJobs.ToArray())

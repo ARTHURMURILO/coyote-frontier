@@ -63,12 +63,12 @@
       - !type:MovespeedModifier
         walkSpeedModifier: 0.65
         sprintSpeedModifier: 0.65
-      - !type:GenericStatusEffect
-        key: Drowsiness
-        component: Drowsiness
-        time: 4
-        type: Add
-        refresh: false
+#      - !type:GenericStatusEffect   # Coyote edit: this chem has been castrated until it is no longer a hard shutdown
+#        key: Drowsiness
+#        component: Drowsiness
+#        time: 4
+#        type: Add
+#        refresh: false
       - !type:HealthChange
         conditions:
         - !type:ReagentThreshold
@@ -323,6 +323,7 @@
   color: "#6b0007"
   metabolisms:
     Poison:
+      metabolismRate: 3.00 # Coyote edit, brings to the level of other severe acids
       effects:
       - !type:HealthChange
         damage:
@@ -558,7 +559,7 @@
             Poison: 0.06
 
 - type: reagent
-  id: Pax
+  id: Pax # Coyote edit: castrated to prevent instant knockouts. needs a slower buildup of 20-30 seconds or more
   name: reagent-name-pax
   group: Narcotics
   desc: reagent-desc-pax
@@ -567,11 +568,19 @@
   metabolisms:
     Poison:
       effects:
-      - !type:GenericStatusEffect
-        key: Pacified
-        component: Pacified
-        type: Add
-        time: 4
+      - !type:PopupMessage
+        type: Local
+        visualType: MediumCaution
+        messages:
+        - "generic-reagent-effect-peaceful"
+        - "generic-reagent-effect-harmless"
+        - "generic-reagent-effect-harmony"
+        probability: 0.2
+#      - !type:GenericStatusEffect
+#        key: Pacified
+#        component: Pacified
+#        type: Add
+#        time: 4
 
 - type: reagent
   id: Honk
@@ -668,8 +677,15 @@
   metabolisms:
     Poison:
       effects:
-      - !type:Electrocute
-        probability: 0.8
+      - !type:PopupMessage  # Coyote edit: this chem has been castrated until it is no longer a hard shutdown
+        type: Local
+        visualType: MediumCaution
+        messages:
+        - "generic-reagent-effect-static"
+        - "generic-reagent-effect-prickle"
+        probability: 0.4
+#      - !type:Electrocute
+#        probability: 0.8
 
 - type: reagent
   id: Lipolicide

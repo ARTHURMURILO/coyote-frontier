@@ -10,6 +10,12 @@ namespace Content.Shared.Humanoid.Markings
         [DataField("markingColor")]
         private List<Color> _markingColors = new();
 
+        [DataField("glowLevels")]
+        private List<float> _markingGlow = new();
+
+        [DataField("glow")]
+        private float _legacyGlow;
+
         private Marking()
         {
         }
@@ -19,6 +25,7 @@ namespace Content.Shared.Humanoid.Markings
         {
             MarkingId = markingId;
             _markingColors = markingColors;
+            _markingGlow = CreateGlowLevels(markingColors.Count);
         }
 
         public Marking(string markingId,
@@ -32,6 +39,7 @@ namespace Content.Shared.Humanoid.Markings
             List<Color> markingColors) : this(marking)
         {
             _markingColors = markingColors;
+            _markingGlow = NormalizeGlowLevels(marking.MarkingGlow, markingColors.Count, marking._legacyGlow);
         }
 
         public Marking(string markingId,
@@ -45,14 +53,12 @@ namespace Content.Shared.Humanoid.Markings
             : this(marking)
         {
             _markingColors = new(markingColors);
+            _markingGlow = NormalizeGlowLevels(marking.MarkingGlow, _markingColors.Count, marking._legacyGlow);
         }
 
         /// <summary>
         /// Creates a new marking from metadata, setting defaults based on category
         /// </summary>
-        /// <param name="markingId"></param>
-        /// <param name="colorCount"></param>
-        /// <param name="category"></param>
         public Marking(string markingId, int colorCount, MarkingCategories category)
         {
             MarkingId = markingId;
@@ -60,6 +66,7 @@ namespace Content.Shared.Humanoid.Markings
             for (int i = 0; i < colorCount; i++)
                 colors.Add(Color.White);
             _markingColors = colors;
+            _markingGlow = CreateGlowLevels(colorCount);
 
             if (category == MarkingCategories.UndergarmentBottom || category == MarkingCategories.UndergarmentTop)
             {
@@ -93,6 +100,7 @@ namespace Content.Shared.Humanoid.Markings
             for (int i = 0; i < colorCount; i++)
                 colors.Add(Color.White);
             _markingColors = colors;
+            _markingGlow = NormalizeGlowLevels(marking.MarkingGlow, colorCount, marking._legacyGlow);
         }
 
         public Marking(Marking other)
@@ -109,6 +117,8 @@ namespace Content.Shared.Humanoid.Markings
             TakeOffVerb = other.TakeOffVerb;
             TakeOffVerb2p = other.TakeOffVerb2p;
             ShowAtStart = other.ShowAtStart;
+            _markingGlow = new(other.MarkingGlow);
+            _legacyGlow = other._legacyGlow;
         }
 
         public Marking(MarkingDTO? other)
@@ -124,6 +134,8 @@ namespace Content.Shared.Humanoid.Markings
             PutOnVerb2p = other.PutOnVerb2p ?? PutOnVerb2p;
             TakeOffVerb = other.TakeOffVerb ?? TakeOffVerb;
             TakeOffVerb2p = other.TakeOffVerb2p ?? TakeOffVerb2p;
+            _markingGlow = NormalizeGlowLevels(other.GlowLevels, _markingColors.Count, other.Glow ?? 0f);
+            _legacyGlow = other.Glow ?? 0f;
         }
 
         /// <summary>
@@ -137,6 +149,9 @@ namespace Content.Shared.Humanoid.Markings
         /// </summary>
         [ViewVariables]
         public IReadOnlyList<Color> MarkingColors => _markingColors;
+
+        [ViewVariables]
+        public IReadOnlyList<float> MarkingGlow => _markingGlow;
 
         /// <summary>
         ///     If this marking is currently visible.
@@ -201,6 +216,16 @@ namespace Content.Shared.Humanoid.Markings
         public void SetColor(int colorIndex, Color color) =>
             _markingColors[colorIndex] = color;
 
+        public void SetGlow(int glowIndex, float glow)
+        {
+            if (glowIndex < 0 || glowIndex >= _markingGlow.Count)
+                return;
+
+            var normalizedGlow = Math.Clamp(glow, 0f, 1f);
+            _markingGlow[glowIndex] = normalizedGlow;
+            _legacyGlow = normalizedGlow;
+        }
+
         public void SetColor(Color color)
         {
             for (int i = 0; i < _markingColors.Count; i++)
@@ -244,7 +269,8 @@ namespace Content.Shared.Humanoid.Markings
                 && PutOnVerb2p == other.PutOnVerb2p
                 && TakeOffVerb == other.TakeOffVerb
                 && TakeOffVerb2p == other.TakeOffVerb2p
-                && ShowAtStart == other.ShowAtStart;
+                && ShowAtStart == other.ShowAtStart
+                && _markingGlow.SequenceEqual(other._markingGlow);
         }
 
         public MarkingDTO ToDTO()
@@ -260,8 +286,37 @@ namespace Content.Shared.Humanoid.Markings
                 PutOnVerb = PutOnVerb,
                 PutOnVerb2p = PutOnVerb2p,
                 TakeOffVerb = TakeOffVerb,
-                TakeOffVerb2p = TakeOffVerb2p
+                TakeOffVerb2p = TakeOffVerb2p,
+                GlowLevels = _markingGlow.ToList(),
+                Glow = _markingGlow.FirstOrDefault()
             };
+        }
+
+        private static List<float> CreateGlowLevels(int count)
+        {
+            List<float> glowLevels = new();
+            for (var i = 0; i < count; i++)
+            {
+                glowLevels.Add(0f);
+            }
+
+            return glowLevels;
+        }
+
+        private static List<float> NormalizeGlowLevels(IEnumerable<float>? source, int count, float fallback)
+        {
+            var normalizedFallback = Math.Clamp(fallback, 0f, 1f);
+            var sourceList = source?.Select(value => Math.Clamp(value, 0f, 1f)).ToList() ?? new List<float>();
+
+            if (sourceList.Count > count)
+                sourceList.RemoveRange(count, sourceList.Count - count);
+
+            while (sourceList.Count < count)
+            {
+                sourceList.Add(normalizedFallback);
+            }
+
+            return sourceList;
         }
     }
 }

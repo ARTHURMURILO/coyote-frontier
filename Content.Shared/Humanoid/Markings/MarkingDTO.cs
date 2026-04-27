@@ -55,5 +55,15 @@ namespace Content.Shared.Humanoid.Markings
         ///     Verb to use when taking off (2nd person)
         /// </summary>
         public string? TakeOffVerb2p { get; set; }
+
+        /// <summary>
+        ///     Per-color glow intensities from 0 to 1.
+        /// </summary>
+        public List<float>? GlowLevels { get; set; }
+
+        /// <summary>
+        ///     Per-marking glow intensity from 0 to 1.
+        /// </summary>
+        public float? Glow { get; set; }
     }
 }

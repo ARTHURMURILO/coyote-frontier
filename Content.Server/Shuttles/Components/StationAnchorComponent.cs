@@ -21,4 +21,9 @@ public sealed partial class StationAnchorComponent : Component
 
     [DataField("switchedOn")]
     public bool SwitchedOn { get; set; } = true;
+
+
+    [DataField("extendDuration")]
+    public bool ExtendDuration { get; set; } = false;
+
 }

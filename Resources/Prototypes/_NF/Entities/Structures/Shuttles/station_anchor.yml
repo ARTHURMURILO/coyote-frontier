@@ -5,6 +5,8 @@
   placement:
     mode: AlignTileAny
   components:
+  - type: StationAnchor
+    extendDuration: true
   - type: PowerCharge
     activePower: 500
     activeChargingPower: 500

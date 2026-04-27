@@ -1,10 +1,11 @@
 <controls:FancyWindow xmlns="https://spacestation14.io"
               xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
-              MinSize="520 420"
+              xmlns:cc="clr-namespace:Content.Client.Administration.UI.CustomControls"
+              MinSize="640 460"
               SetSize="760 620">
-    <BoxContainer Orientation="Vertical" SeparationOverride="8">
+    <BoxContainer Orientation="Vertical" SeparationOverride="6">
         <!-- Header with character name and job - This area is draggable -->
-        <PanelContainer StyleClasses="AngleRect" MinHeight="60">
+        <PanelContainer MinHeight="60" StyleClasses="AngleRect">
             <BoxContainer Orientation="Vertical" Margin="10 10 10 10">
                 <Label Name="CharacterName"
                        FontColorOverride="#FFFFFF"
@@ -16,43 +17,52 @@
         </PanelContainer>
 
         <!-- Content area - Make non-draggable -->
-        <PanelContainer StyleClasses="AngleRect" VerticalExpand="True" MouseFilter="Stop">
-            <BoxContainer Orientation="Horizontal" Margin="12 12 12 12" SeparationOverride="12" VerticalExpand="True">
-                <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True">
+        <PanelContainer VerticalExpand="True" MouseFilter="Stop" StyleClasses="AngleRect">
+            <BoxContainer Orientation="Horizontal" Margin="10 10 10 10" SeparationOverride="14" VerticalExpand="True" RectClipContent="True">
+                <TabContainer Name="TabContainer" HorizontalExpand="True" VerticalExpand="True" RectClipContent="True">
                     <!-- Description Tab -->
-                    <BoxContainer Name="DescriptionTab" Orientation="Vertical">
-                        <ScrollContainer VerticalExpand="True">
+                    <BoxContainer Name="DescriptionTab" Orientation="Vertical" RectClipContent="True">
+                        <ScrollContainer Name="DescriptionScroll" VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False" ReserveScrollbarSpace="True">
                             <RichTextLabel Name="DescriptionText"
-                                          Margin="10"
-                                          VerticalExpand="True"
-                                          VerticalAlignment="Top"/>
+                                           Margin="10 10 18 10"
+                                           HorizontalExpand="True"
+                                           VerticalExpand="True"
+                                           VerticalAlignment="Top"/>
                         </ScrollContainer>
                     </BoxContainer>
 
                     <!-- OOC Consent Tab -->
-                    <BoxContainer Name="ConsentTab" Orientation="Vertical">
-                        <ScrollContainer VerticalExpand="True">
+                    <BoxContainer Name="ConsentTab" Orientation="Vertical" RectClipContent="True">
+                        <ScrollContainer Name="ConsentScroll" VerticalExpand="True" HorizontalExpand="True" HScrollEnabled="False" ReserveScrollbarSpace="True">
                             <RichTextLabel Name="ConsentText"
-                                          Margin="10"
-                                          VerticalExpand="True"
-                                          VerticalAlignment="Top"/>
+                                           Margin="10 10 18 10"
+                                           HorizontalExpand="True"
+                                           VerticalExpand="True"
+                                           VerticalAlignment="Top"/>
                         </ScrollContainer>
                     </BoxContainer>
                 </TabContainer>
 
-                <BoxContainer Orientation="Vertical" HorizontalAlignment="Right" VerticalAlignment="Bottom" SeparationOverride="6">
-                    <PanelContainer StyleClasses="AngleRect" MinSize="180 180">
-                        <SpriteView Name="CharacterPreview"
-                                    OverrideDirection="South"
-                                    Scale="11 11"
-                                    HorizontalExpand="True"
-                                    VerticalExpand="True"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"/>
-                    </PanelContainer>
-                    <BoxContainer Orientation="Horizontal" SeparationOverride="6" HorizontalAlignment="Center">
-                        <Button Name="RotateLeftButton" Text="◀" MinSize="64 28"/>
-                        <Button Name="RotateRightButton" Text="▶" MinSize="64 28"/>
+                                <!-- Right side mirrors lobby character setup formatting -->
+                                <BoxContainer Orientation="Vertical"
+                                                            VerticalAlignment="Center"
+                                                            VerticalExpand="True"
+                                                            HorizontalExpand="False"
+                                                            MinWidth="280"
+                                                            SetWidth="280"
+                                                            Margin="4 0 0 0">
+                    <SpriteView Name="CharacterPreview"
+                                Margin="4"
+                                OverrideDirection="South"
+                                                                Scale="10 10"
+                                                                MinSize="160 160"
+                                                                SizeFlagsStretchRatio="1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"/>
+                    <BoxContainer HorizontalAlignment="Center" Margin="0,5" Orientation="Horizontal">
+                        <Button Name="RotateLeftButton" StyleClasses="OpenRight" Text="◀"/>
+                        <cc:VSeparator Margin="2,0,3,0" />
+                        <Button Name="RotateRightButton" StyleClasses="OpenLeft" Text="▶"/>
                     </BoxContainer>
                 </BoxContainer>
             </BoxContainer>

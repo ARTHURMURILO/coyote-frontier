@@ -198,16 +198,7 @@ public sealed class ContainmentFieldGeneratorSystem : EntitySystem
 
         if (component.PowerBuffer >= component.PowerMinimum)
         {
-            var directions = Enum.GetValues<Direction>().Length;
-            for (int i = 0; i < directions-1; i+=2)
-            {
-                var dir = (Direction)i;
-
-                if (component.Connections.ContainsKey(dir))
-                    continue; // This direction already has an active connection
-
-                TryGenerateFieldConnection(dir, generator, genXForm);
-            }
+            TryGenerateConnections(generator, genXForm);
         }
 
         ChangePowerVisualizer(power, generator);
@@ -274,6 +265,7 @@ public sealed class ContainmentFieldGeneratorSystem : EntitySystem
         }
 
         var otherFieldGenerator = (ent, otherFieldGeneratorComponent);
+
         var fields = GenerateFieldConnection(generator, otherFieldGenerator);
 
         component.Connections[dir] = (otherFieldGenerator, fields);
@@ -296,6 +288,20 @@ public sealed class ContainmentFieldGeneratorSystem : EntitySystem
         UpdateConnectionLights(generator);
         _popupSystem.PopupEntity(Loc.GetString("comp-containment-connected"), generator);
         return true;
+    }
+
+    private void TryGenerateConnections(Entity<ContainmentFieldGeneratorComponent> generator, TransformComponent genXForm)
+    {
+        var directions = Enum.GetValues<Direction>().Length;
+        for (int i = 0; i < directions - 1; i += 2)
+        {
+            var dir = (Direction) i;
+
+            if (generator.Comp.Connections.ContainsKey(dir))
+                continue;
+
+            TryGenerateFieldConnection(dir, generator, genXForm);
+        }
     }
 
     /// <summary>
