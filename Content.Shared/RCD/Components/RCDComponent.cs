@@ -1,6 +1,5 @@
 using Content.Shared.RCD.Systems;
 using Robust.Shared.Audio;
-using Robust.Shared.Enums;
 using Robust.Shared.GameStates;
 using Robust.Shared.Physics;
 using Robust.Shared.Prototypes;
@@ -44,7 +43,13 @@ public sealed partial class RCDComponent : Component
     /// Indicates whether this is an RCD or an RPD
     /// </summary>
     [DataField, AutoNetworkedField]
-    public bool IsRpd { get; set; } = false;
+    public bool IsRpd { get; set; }
+
+    /// <summary>
+    /// Indicates if this RCD/RPD should construct instantly.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool InstantConstruction { get; set; }
 
     /// <summary>
     /// The direction constructed entities will face upon spawning

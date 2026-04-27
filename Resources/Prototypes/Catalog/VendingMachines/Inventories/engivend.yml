@@ -15,7 +15,7 @@
     ShipyardRCD: 10 # Frontier
     ShipyardRCDAmmo: 20 # Frontier
     RPD: 5
-    RPDAmmo: 10
+    RCDAmmo: 10
     DoorRemoteShipyard: 5 # Frontier
     ClothingHeadHatCone: 10 # Frontier: 4<10
   contrabandInventory:

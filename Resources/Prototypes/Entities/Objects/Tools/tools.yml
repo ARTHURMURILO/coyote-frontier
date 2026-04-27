@@ -300,6 +300,7 @@
   - type: RCD
     availablePrototypes:
     - WallSolid
+    - WallShuttle
     - FloorSteel
     - Plating
     - Catwalk
@@ -347,6 +348,11 @@
 
 - type: entity
   id: RCDEmpty
+  parent: RCD
+  suffix: Empty
+  components:
+  - type: LimitedCharges
+    lastCharges: -1
 
 - type: entity
   id: RPD
@@ -391,11 +397,19 @@
     - Belt
 
 - type: entity
+  id: RPDEmpty
+  parent: RPD
+  suffix: Empty
+  components:
+  - type: LimitedCharges
+    lastCharges: -1
+
+- type: entity
   id: RCDRecharging
   parent: RCD
   name: experimental RCD
   description: Cyborg-mounted Rapid Construction Device which creates compressed matter on the fly using an internal fabricator.
-  suffix: AutoRecharge
+  suffix: AutoRecharge, Borg
   components:
   - type: LimitedCharges
     maxCharges: 20
@@ -409,6 +423,36 @@
   name: experimental RCD
   description: A bluespace-enhanced rapid construction device that passively generates its own compressed matter.
   components:
+  - type: RCD
+    instantConstruction: true
+    availablePrototypes:
+    - WallSolid
+    - WallShuttle
+    - WallMining
+    - WallMiningDiagonal
+    - WallPlastitanium
+    - WallPlastitaniumDiagonal
+    - PlastitaniumWindow
+    - PlastitaniumWindowDiagonal
+    - FloorSteel
+    - FloorWood
+    - Plating
+    - Catwalk
+    - Grille
+    - Window
+    - WindowDirectional
+    - WindowReinforcedDirectional
+    - ReinforcedWindow
+    - Airlock
+    - AirlockGlass
+    - Firelock
+    - TubeLight
+    - BulbLight
+    - LVCable
+    - MVCable
+    - HVCable
+    - CableTerminal
+    - Deconstruct
   - type: AutoRecharge
     rechargeDuration: 1
 
@@ -432,12 +476,6 @@
   - type: StaticPrice
     price: 30 # Frontier 60<30
     vendPrice: 1000 # Frontier
-
-- type: entity
-  name: compressed matter
-  parent: RCDAmmo
-  id: RPDAmmo
-  description: A cartridge of raw matter compacted by bluespace technology. Used in rapid pipe dispensers.
 
 - type: entity
   name: omnitool

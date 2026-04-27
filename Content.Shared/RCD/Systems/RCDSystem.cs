@@ -54,7 +54,7 @@ public sealed class RCDSystem : EntitySystem
     private static readonly ProtoId<TagPrototype> CatwalkTag = "Catwalk";
     private static readonly ProtoId<TagPrototype> WallLightTag = "WallLight";
 
-    private HashSet<EntityUid> _intersectingEntities = new();
+    private HashSet<EntityUid> _intersectingEntities = [];
 
     public override void Initialize()
     {
@@ -110,7 +110,7 @@ public sealed class RCDSystem : EntitySystem
 
         var msg = Loc.GetString("rcd-component-examine-mode-details", ("mode", Loc.GetString(prototype.SetName)));
 
-        if (prototype.Mode == RcdMode.ConstructTile || prototype.Mode == RcdMode.ConstructObject)
+        if (prototype.Mode is RcdMode.ConstructTile or RcdMode.ConstructObject)
         {
             var name = Loc.GetString(prototype.SetName);
 
@@ -178,8 +178,8 @@ public sealed class RCDSystem : EntitySystem
 
         // Get the starting cost, delay, and effect from the prototype
         var cost = prototype.Cost;
-        var delay = prototype.Delay;
-        var effectPrototype = prototype.Effect;
+        var delay = component.InstantConstruction ? 0 : prototype.Delay;
+        var effectPrototype = component.InstantConstruction ? _instantConstructionFx : prototype.Effect;
 
         #region: Operation modifiers
 
@@ -194,8 +194,8 @@ public sealed class RCDSystem : EntitySystem
                     if (TryComp<RCDDeconstructableComponent>(args.Target, out var destructible))
                     {
                         cost = destructible.Cost;
-                        delay = destructible.Delay;
-                        effectPrototype = destructible.Effect;
+                        delay = component.InstantConstruction ? 0 : destructible.Delay;
+                        effectPrototype = component.InstantConstruction ? _instantConstructionFx : destructible.Effect;
                     }
                 }
 
@@ -208,8 +208,8 @@ public sealed class RCDSystem : EntitySystem
                     if (_protoManager.TryIndex(protoName, out var deconProto))
                     {
                         cost = deconProto.Cost;
-                        delay = deconProto.Delay;
-                        effectPrototype = deconProto.Effect;
+                        delay = component.InstantConstruction ? 0 : deconProto.Delay;
+                        effectPrototype = component.InstantConstruction ? _instantConstructionFx : deconProto.Effect;
                     }
                 }
 

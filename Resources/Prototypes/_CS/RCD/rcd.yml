@@ -154,7 +154,7 @@
   category: Airlocks
   sprite: { sprite: _NF/Structures/Doors/Airlocks/Glass/docknfsd.rsi, state: closed }
   mode: ConstructObject
-  prototype: AirlockShuttleNfsdLocked
+  prototype: AirlockShuttle NfsdLocked
   cost: 12
   delay: 12
   collisionMask: FullTileMask

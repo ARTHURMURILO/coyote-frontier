@@ -44,7 +44,7 @@
   - TRayScanner
   - LightReplacer
   - RPD
-  - RPDAmmo
+  - RCDAmmo
 
 - type: latheRecipePack
   id: NFBasicEVAToolsStatic
