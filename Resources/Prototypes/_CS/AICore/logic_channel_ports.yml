@@ -1,0 +1,59 @@
+- type: sourcePort
+  id: ChannelOne
+  name: Logic Channel One
+  description: Signal from AI core logic channel one
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelTwo
+  name: Logic Channel Two
+  description: Signal from AI core logic channel two
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelThree
+  name: Logic Channel Three
+  description: Signal from AI core logic channel three
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelFour
+  name: Logic Channel Four
+  description: Signal from AI core logic channel four
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelFive
+  name: Logic Channel Five
+  description: Signal from AI core logic channel five
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelSix
+  name: Logic Channel Six
+  description: Signal from AI core logic channel six
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelSeven
+  name: Logic Channel Seven
+  description: Signal from AI core logic channel seven
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelEight
+  name: Logic Channel Eight
+  description: Signal from AI core logic channel eight
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelNine
+  name: Logic Channel Nine
+  description: Signal from AI core logic channel nine
+  defaultLinks: [ Toggle, Open, Close, On, Off ]
+
+- type: sourcePort
+  id: ChannelTen
+  name: Logic Channel Ten
+  description: Signal from AI core logic channel ten
+  defaultLinks: [ Toggle, Open, Close, On, Off ]

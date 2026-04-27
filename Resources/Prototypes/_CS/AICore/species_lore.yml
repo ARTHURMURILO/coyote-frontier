@@ -1,0 +1,74 @@
+- type: speciesLore
+  id: Human
+  lore: "The most common and adaptable species in known space. Humans are found in every corner of civilization, known for their versatility and determination."
+  description: "Human"
+
+- type: speciesLore
+  id: Lizard
+  lore: "Lizardpeople, also known as Unathi, are a reptilian species from the planet Moghes. They value honor, clan ties, and are known for their resilience and strength."
+  description: "Unathi lizardperson"
+
+- type: speciesLore
+  id: Moth
+  lore: "Mothpeople are a gentle, curious species from a dim, cold world. They are naturally drawn to light sources and have a strong sense of community."
+  description: "Mothperson"
+
+- type: speciesLore
+  id: Dwarf
+  lore: "Dwarves are a hardy, stout species known for their craftsmanship, resilience, and love of mining and engineering."
+  description: "Dwarf"
+
+- type: speciesLore
+  id: Elf
+  lore: "Elves are an elegant, long-lived species with a deep connection to nature and a natural aptitude for science and medicine."
+  description: "Elf"
+
+- type: speciesLore
+  id: Oni
+  lore: "Oni are a tall, horned species known for their physical strength and imposing presence. Despite their fearsome appearance, many are gentle and honorable."
+  description: "Oni"
+
+- type: speciesLore
+  id: Vulpkanin
+  lore: "Vulpkanin are a canine-like species known for their keen senses, pack mentality, and strong loyalty to their crewmates."
+  description: "Vulpkanin"
+
+- type: speciesLore
+  id: Felinid
+  lore: "Felinids are a feline-like species known for their agility, curiosity, and independent nature. They make excellent scouts and pilots."
+  description: "Felinid"
+
+- type: speciesLore
+  id: Reptilian
+  lore: "A stoic reptilian species known for their冷静 demeanor and methodical approach to problem-solving."
+  description: "Reptilian"
+
+- type: speciesLore
+  id: IPC
+  lore: "Machine intelligences housed in synthetic bodies. IPCs are treated as people under galactic law and are found in many roles across the station."
+  description: "IPC synthetic"
+
+- type: speciesLore
+  id: Slime
+  lore: "Slime people are gelatinous humanoids formed from strange alien biology. They are curious, resilient, and often employed in research."
+  description: "Slime person"
+
+- type: speciesLore
+  id: Anthromorph
+  lore: "Anthromorphs are a diverse category of humanoid species with various animal-like features. Each individual is unique."
+  description: "Anthromorph"
+
+- type: speciesLore
+  id: Arachne
+  lore: "Arachne are a spider-like species known for their weaving skills, patience, and methodical approach to challenges."
+  description: "Arachne"
+
+- type: speciesLore
+  id: Rodentia
+  lore: "Rodentia are a small, quick species known for their resourcefulness and ability to fit into tight spaces."
+  description: "Rodentia"
+
+- type: speciesLore
+  id: Harpy
+  lore: "Harpies are a bird-like species with a natural talent for music and communication. Their keen eyesight makes them excellent lookouts."
+  description: "Harpy"

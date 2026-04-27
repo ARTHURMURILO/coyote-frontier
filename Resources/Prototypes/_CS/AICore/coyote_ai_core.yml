@@ -1,0 +1,77 @@
+- type: entity
+  parent: BaseComputer
+  id: CoyoteAICore
+  name: coyote AI core
+  description: An experimental neural network core powered by an external intelligence.
+  components:
+  - type: CoyoteAICore
+  - type: Computer
+    board: CoyoteAICoreCircuitboard
+  - type: ApcPowerReceiver
+    powerLoad: 50
+  - type: ActiveRadio
+    channels:
+    - Common
+    - Command
+    - Engineering
+    - Medical
+    - Science
+    - Security
+    - Service
+    - Supply
+  - type: IntrinsicRadioTransmitter
+    channels:
+    - Common
+    - Command
+    - Engineering
+    - Medical
+    - Science
+    - Security
+    - Service
+    - Supply
+  - type: Speech
+    speechVerb: Default
+  - type: DeviceLinkSource
+    ports:
+    - ChannelOne
+    - ChannelTwo
+    - ChannelThree
+    - ChannelFour
+    - ChannelFive
+    - ChannelSix
+    - ChannelSeven
+    - ChannelEight
+    - ChannelNine
+    - ChannelTen
+  - type: Sprite
+    sprite: Mobs/Silicon/station_ai.rsi
+    layers:
+    - state: base
+    - state: ai_empty
+      shader: unshaded
+  - type: ActivatableUI
+    key: enum.CoyoteAICoreUiKey.Config
+  - type: UserInterface
+    interfaces:
+      enum.CoyoteAICoreUiKey.Config:
+        type: CoyoteAIConfigBoundUserInterface
+  - type: Destructible
+    thresholds:
+    - trigger:
+        !type:DamageTrigger
+        damage: 300
+      behaviors:
+      - !type:DoActsBehavior
+        acts: ["Destruction"]
+      - !type:PlaySoundBehavior
+        sound:
+          collection: MetalBreak
+
+- type: entity
+  parent: BaseComputerCircuitboard
+  id: CoyoteAICoreCircuitboard
+  name: coyote AI core circuitboard
+  description: A circuitboard for an experimental AI core.
+  components:
+  - type: ComputerBoard
+    prototype: CoyoteAICore

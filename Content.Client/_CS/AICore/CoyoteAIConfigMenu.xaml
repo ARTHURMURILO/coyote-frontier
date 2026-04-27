@@ -1,0 +1,112 @@
+<controls:FancyWindow xmlns="https://spacestation14.io"
+                       xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
+                       Title="AI Core"
+                        MinSize="400 180"
+                        SetSize="560 220">
+    <!-- Full config view (unlocked) -->
+    <ScrollContainer Name="FullView" HorizontalExpand="True" VerticalExpand="True" Visible="True">
+        <BoxContainer Orientation="Vertical" Margin="10" SeparationOverride="8">
+            <BoxContainer Name="OwnerSection" Orientation="Vertical" SeparationOverride="4">
+                <Label Name="OwnerLabel" Text="Unclaimed" FontColorOverride="#FFA500" />
+                <Label Name="LockStatusLabel" Text="Status: Unlocked" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                    <Button Name="LockButton" Text="Lock" MinSize="100 30" Disabled="True" />
+                    <Button Name="AbandonButton" Text="Abandon" MinSize="120 30" Disabled="True" />
+                    <Button Name="ResetHistoryButton" Text="Reset History" MinSize="140 30" />
+                </BoxContainer>
+            </BoxContainer>
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <Label Text="AI Name" />
+            <LineEdit Name="AiNameEdit" HorizontalExpand="True" MinSize="0 30" />
+
+            <Label Text="Personality" />
+            <LineEdit Name="PersonalityEdit" HorizontalExpand="True" MinSize="0 30" />
+
+            <Label Text="Law Set" />
+            <OptionButton Name="LawSetDropdown" HorizontalExpand="True" MinSize="0 30" />
+
+            <Label Text="Max History (5-1000)" />
+            <LineEdit Name="MaxHistoryEdit" HorizontalExpand="True" MinSize="0 30" />
+
+            <Label Text="Max Tokens" />
+            <LineEdit Name="MaxTokensEdit" HorizontalExpand="True" MinSize="0 30" />
+
+            <Label Text="Vision Range (1-15m)" />
+            <LineEdit Name="VisionRangeEdit" MinSize="80 30" />
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <Label Text="API Endpoint" />
+            <LineEdit Name="ApiEndpointEdit" HorizontalExpand="True" MinSize="0 30" />
+
+            <Label Text="Model Name (optional)" />
+            <LineEdit Name="ModelNameEdit" HorizontalExpand="True" MinSize="0 30" />
+
+            <Label Text="Temperature (0.1 - 2.0)" />
+            <LineEdit Name="TemperatureEdit" MinSize="80 30" />
+
+            <Label Text="API Key" />
+            <LineEdit Name="ApiKeyEdit" HorizontalExpand="True" MinSize="0 30" />
+            <Label Name="ApiKeyStatus" Text="" FontColorOverride="#888888" />
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                <Button Name="EnabledButton" ToggleMode="True" Text="Enabled" MinSize="120 36" />
+            </BoxContainer>
+
+            <Label Text="Reasoning Level" />
+            <OptionButton Name="ReasoningDropdown" HorizontalExpand="True" MinSize="0 30" />
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <Label Text="VISION OPTIONS (more detail = more tokens)" FontColorOverride="#888888" />
+
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                <CheckBox Name="VisionPeopleCheck" Text="People/Mobs" />
+            </BoxContainer>
+
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                <CheckBox Name="VisionMachinesCheck" Text="Machines/Computers" />
+            </BoxContainer>
+
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                <CheckBox Name="VisionMachinesDetailCheck" Text="Machine details (description, powered, distance, direction)" />
+            </BoxContainer>
+
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                <CheckBox Name="VisionItemsCheck" Text="Items" />
+            </BoxContainer>
+
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                <CheckBox Name="VisionItemsDetailCheck" Text="Item details (description, legality, amount, distance, direction)" />
+            </BoxContainer>
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+        <Label Name="HistoryLabel" Text="" FontColorOverride="#888888" />
+        <Label Name="TokenLabel" Text="" FontColorOverride="#888888" />
+        <Label Name="TotalTokenLabel" Text="" FontColorOverride="#888888" />
+
+            <Button Name="SaveButton" Text="Save Configuration" MinSize="0 44" />
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <Label Text="LOGIC CHANNELS" StyleClasses="LabelHeading" />
+            <BoxContainer Name="LogicChannelContainer" Orientation="Vertical" SeparationOverride="4" />
+        </BoxContainer>
+    </ScrollContainer>
+
+    <!-- Locked view (no scroll, minimal) -->
+    <BoxContainer Name="LockedView" Orientation="Vertical" Margin="10" SeparationOverride="4"
+                  VerticalExpand="True" HorizontalExpand="True" Visible="False">
+        <Label Name="LockedOwnerLabel" Text="Registered to:" FontColorOverride="#00FF00" />
+        <Label Name="LockedStatusLabel" Text="Status: Locked" />
+        <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="0 8 0 0">
+            <Button Name="LockedLockButton" Text="Unlock" MinSize="100 30" />
+            <Button Name="LockedAbandonButton" Text="Abandon" MinSize="120 30" Disabled="True" />
+        </BoxContainer>
+    </BoxContainer>
+</controls:FancyWindow>

@@ -307,6 +307,39 @@ namespace Content.Server.Pointing.EntitySystems
             return true;
         }
 
+        public bool TryPointEntity(EntityUid pointer, EntityUid target, bool rotateToFace = true)
+        {
+            var coordsPointed = Transform(target).Coordinates;
+            if (!coordsPointed.IsValid(EntityManager))
+            {
+                Log.Warning($"Entity {ToPrettyString(pointer)} attempted to point at invalid coordinates");
+                return false;
+            }
+
+            if (HasComp<PointingArrowComponent>(target))
+                return false;
+
+            if (!CanPoint(pointer))
+                return false;
+
+            if (!InRange(pointer, coordsPointed))
+                return false;
+
+            var mapCoordsPointed = _transform.ToMapCoordinates(coordsPointed);
+            if (rotateToFace)
+                _rotateToFaceSystem.TryFaceCoordinates(pointer, mapCoordsPointed.Position);
+
+            var arrow = EntityManager.SpawnEntity("PointingArrow", coordsPointed);
+            if (TryComp<PointingArrowComponent>(arrow, out var pointing))
+            {
+                pointing.StartPosition = _transform.ToCoordinates((arrow, Transform(arrow)), _transform.ToMapCoordinates(Transform(pointer).Coordinates)).Position;
+                pointing.EndTime = _gameTiming.CurTime + PointDuration;
+                Dirty(arrow, pointing);
+            }
+
+            return true;
+        }
+
         public override void Initialize()
         {
             base.Initialize();
