@@ -457,23 +457,33 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         if (response.Response == null)
         {
             Log.Debug($"CoyoteAI: Inject skipped, null response for core {response.CoreId}");
+            _busyCores.Remove(response.CoreId);
+            _coreDelays[response.CoreId] = _timing.CurTime + TimeSpan.FromSeconds(0.5);
             return;
         }
         if (!response.Response.ShouldRespond)
         {
             Log.Debug($"CoyoteAI: Inject skipped, ShouldRespond=false for core {response.CoreId}");
+            _busyCores.Remove(response.CoreId);
+            _coreDelays[response.CoreId] = _timing.CurTime + TimeSpan.FromSeconds(0.5);
             return;
         }
 
         if (!Exists(response.CoreUid))
         {
             Log.Error($"CoyoteAI: Core entity {response.CoreUid} no longer exists");
+            _busyCores.Remove(response.CoreId);
+            _coreDelays.Remove(response.CoreId);
+            _pendingBatches.Remove(response.CoreId);
             return;
         }
 
         if (!TryComp<CoyoteAICoreComponent>(response.CoreUid, out var core))
         {
             Log.Error($"CoyoteAI: Core component missing on {response.CoreUid}");
+            _busyCores.Remove(response.CoreId);
+            _coreDelays.Remove(response.CoreId);
+            _pendingBatches.Remove(response.CoreId);
             return;
         }
 
@@ -481,6 +491,8 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         if (string.IsNullOrEmpty(message))
         {
             Log.Debug($"CoyoteAI: Empty message from LLM for core {response.CoreId}");
+            _busyCores.Remove(response.CoreId);
+            _coreDelays[response.CoreId] = _timing.CurTime + TimeSpan.FromSeconds(0.5);
             return;
         }
 
