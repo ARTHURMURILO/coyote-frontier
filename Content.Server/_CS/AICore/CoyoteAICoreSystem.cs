@@ -38,6 +38,7 @@ using Content.Shared.Silicons.Laws;
 using Content.Shared.UserInterface;
 using Content.Shared.VendingMachines;
 using Robust.Server.GameObjects;
+using Robust.Shared.Audio.Systems;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
@@ -72,6 +73,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     [Dependency] private readonly MetaDataSystem _metaData = default!;
     [Dependency] private readonly DeviceLinkSystem _deviceLink = default!;
     [Dependency] private readonly ExamineSystemShared _examine = default!;
+    [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly PointingSystem _pointingSystem = default!;
 
 
@@ -354,6 +356,12 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
         Log.Debug($"CoyoteAI: Enqueuing LLM request for core {core.CoreId} from speaker '{entry.SpeakerName}'");
 
+        if (_timing.CurTime >= core.NextSound)
+        {
+            core.NextSound = _timing.CurTime + core.SoundCooldown;
+            _audio.PlayPvs(core.PromptSound, uid);
+        }
+
         var shiftDuration = FormatTime(_timing.CurTime);
         var timeSinceLast = GetTimeSinceLastResponse(core.CoreId);
         var manifest = _manifest.GetCrewManifest();
@@ -600,6 +608,8 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         _metaData.SetEntityName(ent, args.AiName);
 
         UpdateConfigUi(ent);
+
+        _audio.PlayPredicted(ent.Comp.SaveSound, ent, args.Actor);
     }
 
     private void OnResetHistory(Entity<CoyoteAICoreComponent> ent, ref CoyoteAIResetHistoryMessage args)

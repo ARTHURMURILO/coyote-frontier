@@ -1,3 +1,4 @@
+using Robust.Shared.Audio;
 using Robust.Shared.GameStates;
 using Robust.Shared.Prototypes;
 
@@ -41,6 +42,11 @@ public sealed partial class CoyoteAICoreComponent : Component
     [DataField][AutoNetworkedField] public bool ShowItemsDetail;
 
     [DataField] public string LoreNotes = string.Empty;
+
+    [DataField] public SoundSpecifier SaveSound = new SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
+    [DataField] public SoundSpecifier PromptSound = new SoundPathSpecifier("/Audio/Machines/Nuke/general_beep.ogg");
+    [DataField] public TimeSpan NextSound;
+    [DataField] public TimeSpan SoundCooldown = TimeSpan.FromSeconds(1);
 
     [ViewVariables] public bool HasApiKeyConfigured => !string.IsNullOrEmpty(ApiKey);
     [ViewVariables] public bool IsClaimed => !string.IsNullOrEmpty(OwnerId);
