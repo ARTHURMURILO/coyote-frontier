@@ -44,10 +44,6 @@ public sealed partial class CoyoteAICoreComponent : Component
     [DataField] public string LoreNotes = string.Empty;
 
     [DataField] public SoundSpecifier SaveSound = new SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
-    [DataField] public SoundSpecifier PromptSound = new SoundPathSpecifier("/Audio/Machines/Nuke/general_beep.ogg");
-    [DataField] public TimeSpan NextSound;
-    [DataField] public TimeSpan SoundCooldown = TimeSpan.FromSeconds(1);
-
     [DataField][AutoNetworkedField] public float CooldownBase = 0.3f;
     [DataField][AutoNetworkedField] public float CooldownCharFactor = 0.02f;
     [DataField][AutoNetworkedField] public float CooldownMax = 4.0f;

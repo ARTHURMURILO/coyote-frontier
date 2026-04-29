@@ -378,13 +378,6 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
         Log.Debug($"CoyoteAI: Enqueuing LLM request for core {core.CoreId} from speaker '{entry.SpeakerName}'");
 
-        // Sound only plays when a new LLM call actually starts, not during batch accumulation
-        if (_timing.CurTime >= core.NextSound)
-        {
-            core.NextSound = _timing.CurTime + core.SoundCooldown;
-            _audio.PlayPvs(core.PromptSound, uid);
-        }
-
         _busyCores.Add(core.CoreId);
 
         var shiftDuration = FormatTime(_timing.CurTime);
