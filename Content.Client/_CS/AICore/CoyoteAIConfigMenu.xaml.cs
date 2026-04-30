@@ -13,10 +13,11 @@ namespace Content.Client._CS.AICore;
 [GenerateTypedNameReferences]
 public sealed partial class CoyoteAIConfigMenu : FancyWindow
 {
-    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax, List<AICoreMemory>? memories, ItemVisionMode itemMode);
+    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax, List<AICoreMemory>? memories, ItemVisionMode itemMode, string[] channelLabels);
     public event SaveDelegate? OnSave;
     public event Action? OnResetHistory;
     public event Action<int, LogicChannelMode>? OnSetChannel;
+    public event Action<int, string>? OnSetChannelLabel;
     public event Action? OnToggleLock;
     public event Action? OnUnclaim;
     public event Action<string, bool>? OnSetVisionOption;
@@ -27,8 +28,10 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
     public event Action<string, MemoryPriority, List<string>>? OnAddMemory;
     public event Action<string>? OnRemoveMemory;
 
-    private readonly Button[] _channelButtons = new Button[10];
-    private LogicChannelMode[] _channelStates = new LogicChannelMode[10];
+    private readonly Button[] _channelPulseButtons = new Button[20];
+    private readonly LineEdit[] _channelLabelEdits = new LineEdit[20];
+    private LogicChannelMode[] _channelStates = new LogicChannelMode[20];
+    private string[] _channelLabels = new string[20];
     private const float ConfirmTimeout = 2f;
 
     private readonly Dictionary<Button, float> _confirmTimers = new();
@@ -206,7 +209,11 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         int.TryParse(AutoContinueMaxEdit.Text.Trim(), out var autoMax);
         if (autoMax < 1) autoMax = 2;
 
-        OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax, _memories, (ItemVisionMode)ItemModeDropdown.SelectedId);
+        var labels = new string[20];
+        for (int i = 0; i < 20; i++)
+            labels[i] = _channelLabelEdits[i]?.Text ?? string.Empty;
+
+        OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax, _memories, (ItemVisionMode)ItemModeDropdown.SelectedId, labels);
     }
 
     private void SetupConfirmButton(Button btn, string defaultText, Action onConfirm)
@@ -265,10 +272,11 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
     private void BuildChannelRows()
     {
         LogicChannelContainer.Children.Clear();
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 20; i++)
         {
             var idx = i;
             var name = CoyoteAICoreComponent.LogicChannelNames[i];
+            var labelText = name.Substring(0, 1).ToUpper() + name.Substring(1);
 
             var row = new BoxContainer
             {
@@ -277,59 +285,44 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
                 MinSize = new Vector2(0, 28)
             };
 
-            var labelText = name.Substring(0, 1).ToUpper() + name.Substring(1);
             var label = new Label
             {
                 Text = labelText,
-                MinSize = new Vector2(60, 0),
+                MinSize = new Vector2(100, 0),
                 VerticalAlignment = VAlignment.Center
             };
 
-            var offBtn = new Button { Text = "Off", ToggleMode = true, MinSize = new Vector2(45, 24) };
-            var onBtn = new Button { Text = "On", ToggleMode = true, MinSize = new Vector2(45, 24) };
+            var labelEdit = new LineEdit
+            {
+                PlaceHolder = name,
+                MinSize = new Vector2(120, 24),
+                HorizontalExpand = true,
+            };
+            labelEdit.OnTextChanged += args =>
+            {
+                _channelLabels[idx] = args.Text ?? string.Empty;
+                OnSetChannelLabel?.Invoke(idx, args.Text ?? string.Empty);
+            };
+            _channelLabelEdits[idx] = labelEdit;
 
-            offBtn.OnPressed += _ => SendChannel(idx, LogicChannelMode.Off);
-            onBtn.OnPressed += _ => SendChannel(idx, LogicChannelMode.On);
-
-            var sep = new PanelContainer { MinSize = new Vector2(8, 0) };
-
-            var pulseBtn = new Button { Text = "PULSE", MinSize = new Vector2(60, 24) };
+            var pulseBtn = new Button { Text = "PULSE", MinSize = new Vector2(70, 24) };
             pulseBtn.ModulateSelfOverride = Color.Orange;
             pulseBtn.OnPressed += _ =>
             {
                 _channelStates[idx] = LogicChannelMode.Pulse;
-                UpdateChannelVisuals(idx);
                 OnSetChannel?.Invoke(idx, LogicChannelMode.Pulse);
             };
+            _channelPulseButtons[idx] = pulseBtn;
 
             row.AddChild(label);
-            row.AddChild(offBtn);
-            row.AddChild(onBtn);
-            row.AddChild(sep);
+            row.AddChild(labelEdit);
             row.AddChild(pulseBtn);
-
-            _channelButtons[idx] = offBtn;
-
             LogicChannelContainer.AddChild(row);
         }
     }
 
-    private void SendChannel(int index, LogicChannelMode mode)
-    {
-        _channelStates[index] = mode;
-        UpdateChannelVisuals(index);
-        OnSetChannel?.Invoke(index, mode);
-    }
-
     private void UpdateChannelVisuals(int index)
     {
-        var row = LogicChannelContainer.GetChild(index) as BoxContainer;
-        if (row == null) return;
-        var offBtn = row.GetChild(1) as Button;
-        var onBtn = row.GetChild(2) as Button;
-        var mode = _channelStates[index];
-        offBtn!.Pressed = mode == LogicChannelMode.Off;
-        onBtn!.Pressed = mode == LogicChannelMode.On;
     }
 
     private void BuildTokenBar(CoyoteAIConfigBuiState state)
@@ -438,7 +431,7 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
             {
                 var contentLabel = new Label
                 {
-                    Text = fullText,
+                    Text = WordWrap(fullText, 60),
                     HorizontalExpand = true,
                     VerticalAlignment = VAlignment.Top,
                     ClipText = false
@@ -482,6 +475,35 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
                 MemoriesContainer.AddChild(row);
             }
         }
+    }
+
+    private static string WordWrap(string text, int maxCharsPerLine)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxCharsPerLine)
+            return text;
+
+        var sb = new System.Text.StringBuilder();
+        var start = 0;
+        while (start < text.Length)
+        {
+            if (start + maxCharsPerLine >= text.Length)
+            {
+                sb.Append(text[start..]);
+                break;
+            }
+
+            var end = start + maxCharsPerLine;
+            var breakAt = text.LastIndexOfAny(new[] { ' ', ',', '.', ';', ':', '-', '/' }, end, maxCharsPerLine);
+            if (breakAt <= start)
+                breakAt = end;
+            else
+                breakAt++;
+
+            sb.Append(text[start..breakAt]);
+            sb.Append('\n');
+            start = breakAt;
+        }
+        return sb.ToString();
     }
 
     public void UpdateState(CoyoteAIConfigBuiState state)
@@ -612,10 +634,20 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
             }
         }
 
-        for (int i = 0; i < 10 && i < state.ChannelStates.Length; i++)
+        for (int i = 0; i < 20 && i < state.ChannelStates.Length; i++)
         {
             _channelStates[i] = state.ChannelStates[i];
             UpdateChannelVisuals(i);
+        }
+
+        if (state.ChannelLabels != null)
+        {
+            for (int i = 0; i < 20 && i < state.ChannelLabels.Length; i++)
+            {
+                _channelLabels[i] = state.ChannelLabels[i];
+                if (!state.RefreshOnly && _channelLabelEdits[i] != null)
+                    _channelLabelEdits[i].Text = state.ChannelLabels[i] ?? string.Empty;
+            }
         }
 
         if (state.IsClaimed)

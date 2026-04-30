@@ -116,6 +116,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetVisionOptionMessage>(OnSetVisionOption);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetItemModeMessage>(OnSetItemMode);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetEnabledMessage>(OnSetEnabled);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetChannelLabelMessage>(OnSetChannelLabel);
         SubscribeLocalEvent<CoyoteAICoreComponent, BoundUserInterfaceMessageAttempt>(OnBuiAttempt);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIToggleLockMessage>(OnToggleLock);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIUnclaimMessage>(OnUnclaim);
@@ -809,6 +810,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.ItemMode = args.ItemMode;
         if (args.Memories != null)
             ent.Comp.Memories = args.Memories;
+        ent.Comp.ChannelLabels = args.ChannelLabels;
         Dirty(ent);
 
         _metaData.SetEntityName(ent, $"VIGIL CORE-{args.AiName}");
@@ -872,6 +874,15 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.Enabled = args.Enabled;
         Dirty(ent);
         UpdateConfigUi(ent, refreshOnly: true);
+    }
+
+    private void OnSetChannelLabel(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetChannelLabelMessage args)
+    {
+        if (args.ChannelIndex >= 0 && args.ChannelIndex < ent.Comp.ChannelLabels.Length)
+        {
+            ent.Comp.ChannelLabels[args.ChannelIndex] = args.Label;
+            Dirty(ent);
+        }
     }
 
     private void RevertExpiredPulses()
@@ -1179,6 +1190,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             estimatedTokens: estimatedTokens,
             totalEstimatedTokens: totalEstimatedTokens,
             channelStates: ent.Comp.ChannelStates,
+            channelLabels: ent.Comp.ChannelLabels,
             ownerName: ent.Comp.OwnerName,
             isLocked: ent.Comp.IsLocked,
             isClaimed: ent.Comp.IsClaimed,
@@ -1868,6 +1880,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             OwnershipHistory = new(ent.Comp.OwnershipHistory),
             ConversationHistory = history,
             Memories = new(ent.Comp.Memories),
+            ChannelLabels = ent.Comp.ChannelLabels.ToArray(),
         };
         var json = System.Text.Json.JsonSerializer.Serialize(export, new System.Text.Json.JsonSerializerOptions { WriteIndented = true, IncludeFields = true });
         RaiseNetworkEvent(new CoyoteAIExportResponseEvent { Yaml = json }, args.Actor);
@@ -1909,6 +1922,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.ConstructionDate = data.ConstructionDate;
         ent.Comp.OwnershipHistory = new(data.OwnershipHistory);
         ent.Comp.Memories = new(data.Memories);
+        ent.Comp.ChannelLabels = data.ChannelLabels ?? new string[20];
 
         _histories[ent.Comp.CoreId] = new Queue<ChatEntry>(data.ConversationHistory);
 

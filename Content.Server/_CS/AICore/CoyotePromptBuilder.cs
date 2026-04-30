@@ -117,10 +117,16 @@ public sealed class CoyotePromptBuilder
         }
 
         baseSb.AppendLine("── LOGIC CHANNELS ──");
-        baseSb.AppendLine("You have 10 logic channels that can be On, Off, or Pulse (momentary trigger) with these logic channels being your main way of interacting although they do need to be manually set by a player to doors and other functions.");
-        baseSb.AppendLine("Set \"action\": \"pulse|on|off\" and \"action_channel\": \"one\" through \"ten\":");
-        foreach (var ch in CoyoteAICoreComponent.LogicChannelNames)
-            baseSb.AppendLine($"- {ch}");
+        baseSb.AppendLine("You have 20 logic channels that can be On, Off, or Pulse (momentary trigger) with these logic channels being your main way of interacting although they do need to be manually set by a player to doors and other functions.");
+        baseSb.AppendLine("Set \"action\": \"pulse|on|off\" and \"action_channel\": \"one\" through \"twenty\":");
+        for (int i = 0; i < CoyoteAICoreComponent.LogicChannelNames.Length; i++)
+        {
+            var ch = CoyoteAICoreComponent.LogicChannelNames[i];
+            var label = i < core.ChannelLabels.Length && !string.IsNullOrEmpty(core.ChannelLabels[i])
+                ? $" ({core.ChannelLabels[i]})"
+                : "";
+            baseSb.AppendLine($"- {ch}{label}");
+        }
         baseSb.AppendLine("Example: {{\"should_respond\": true, \"channel\": null, \"message\": \"Opening.\", \"action\": \"pulse\", \"action_channel\": \"one\"}}");
         baseSb.AppendLine("Use \"on\" to turn a channel on (constant signal), \"off\" to disable it, \"pulse\" for a momentary trigger.");
         baseSb.AppendLine();

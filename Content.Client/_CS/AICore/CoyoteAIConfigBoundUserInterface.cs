@@ -19,12 +19,12 @@ public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
     {
         base.Open();
         _menu = new();
-        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange, cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax, memories, itemMode) =>
+        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange, cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax, memories, itemMode, channelLabels) =>
         {
             SendMessage(new CoyoteAIConfigSaveMessage(
                 name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange,
                 cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax,
-                memories, itemMode));
+                memories, itemMode, channelLabels));
         };
         _menu.OnResetHistory += () =>
         {
@@ -33,6 +33,10 @@ public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
         _menu.OnSetChannel += (index, mode) =>
         {
             SendMessage(new CoyoteAISetLogicChannelMessage(index, mode));
+        };
+        _menu.OnSetChannelLabel += (index, label) =>
+        {
+            SendMessage(new CoyoteAISetChannelLabelMessage(index, label));
         };
         _menu.OnToggleLock += () =>
         {

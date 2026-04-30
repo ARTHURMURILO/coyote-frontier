@@ -25,7 +25,8 @@ public sealed partial class CoyoteAICoreComponent : Component
     };
     [DataField][AutoNetworkedField] public int MaxHistoryLength = 200;
     [DataField][AutoNetworkedField] public int MaxTokens = 128000;
-    [DataField][AutoNetworkedField] public LogicChannelMode[] ChannelStates = new LogicChannelMode[10];
+    [DataField][AutoNetworkedField] public LogicChannelMode[] ChannelStates = new LogicChannelMode[20];
+    [DataField] public string[] ChannelLabels = new string[20];
     [DataField][AutoNetworkedField] public string OwnerId = string.Empty;
     [DataField][AutoNetworkedField] public string OwnerName = string.Empty;
     [DataField][AutoNetworkedField] public bool IsLocked;
@@ -69,5 +70,5 @@ public sealed partial class CoyoteAICoreComponent : Component
     [ViewVariables] public bool HasApiKeyConfigured => !string.IsNullOrEmpty(ApiKey);
     [ViewVariables] public bool IsClaimed => !string.IsNullOrEmpty(OwnerId);
 
-    public static readonly string[] LogicChannelNames = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
+    public static readonly string[] LogicChannelNames = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty" };
 }

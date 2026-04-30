@@ -65,6 +65,7 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
     public int TotalEstimatedTokens;
 
     public LogicChannelMode[] ChannelStates;
+    public string[] ChannelLabels;
     public string OwnerName;
     public bool IsLocked;
     public bool IsClaimed;
@@ -119,6 +120,7 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         int maxHistory, int maxTokens,
         bool enabled, int historyLength, int estimatedTokens, int totalEstimatedTokens,
         LogicChannelMode[]? channelStates = null,
+        string[]? channelLabels = null,
         string ownerName = "", bool isLocked = false, bool isClaimed = false,
         bool lockedView = false,
         bool showPeople = true, bool showMachines = true, bool showMachinesDetail = false,
@@ -151,7 +153,8 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         HistoryLength = historyLength;
         EstimatedTokens = estimatedTokens;
         TotalEstimatedTokens = totalEstimatedTokens;
-        ChannelStates = channelStates ?? new LogicChannelMode[10];
+        ChannelStates = channelStates ?? new LogicChannelMode[20];
+        ChannelLabels = channelLabels ?? new string[20];
         OwnerName = ownerName;
         IsLocked = isLocked;
         IsClaimed = isClaimed;
@@ -211,6 +214,7 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
     public int AutoContinueMax;
     public List<AICoreMemory>? Memories;
     public ItemVisionMode ItemMode = ItemVisionMode.SearchEngine;
+    public string[] ChannelLabels = new string[20];
 
     public CoyoteAIConfigSaveMessage(string aiName, string personalityPrompt, string apiEndpoint,
         string modelName, string apiKey, float temperature, ReasoningLevel reasoningLevel,
@@ -218,7 +222,8 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
         float cooldownBase = 0.3f, float cooldownCharFactor = 0.02f, float cooldownMax = 4f,
         bool autoContinue = false, int autoContinueThreshold = 400, int autoContinueMax = 2,
         List<AICoreMemory>? memories = null,
-        ItemVisionMode itemMode = ItemVisionMode.SearchEngine)
+        ItemVisionMode itemMode = ItemVisionMode.SearchEngine,
+        string[]? channelLabels = null)
     {
         AiName = aiName;
         PersonalityPrompt = personalityPrompt;
@@ -240,6 +245,7 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
         AutoContinueMax = autoContinueMax;
         Memories = memories;
         ItemMode = itemMode;
+        ChannelLabels = channelLabels ?? new string[20];
     }
 }
 
@@ -292,6 +298,19 @@ public sealed class CoyoteAISetLogicChannelMessage : BoundUserInterfaceMessage
     {
         ChannelIndex = index;
         Mode = mode;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CoyoteAISetChannelLabelMessage : BoundUserInterfaceMessage
+{
+    public int ChannelIndex;
+    public string Label = string.Empty;
+
+    public CoyoteAISetChannelLabelMessage(int index, string label)
+    {
+        ChannelIndex = index;
+        Label = label;
     }
 }
 
@@ -433,6 +452,7 @@ public sealed class AICoreExportData
     public List<OwnershipRecord> OwnershipHistory = new();
     public List<ChatEntry> ConversationHistory = new();
     public List<AICoreMemory> Memories = new();
+    public string[] ChannelLabels = new string[20];
 }
 
 // Server→Client event for export response
