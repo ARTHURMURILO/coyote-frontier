@@ -99,6 +99,8 @@
   recipes:
   - ShipyardRCD
   - ShipyardRCDAmmo
+  - RPD
+  - RCDAmmo
   - ConstructionBagOfHolding
   - ClothingBeltChiefEngineer
   - ClothingShoesBootsMag

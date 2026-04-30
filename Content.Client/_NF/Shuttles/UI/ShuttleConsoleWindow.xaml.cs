@@ -13,6 +13,8 @@ namespace Content.Client.Shuttles.UI
         public event Action<NetEntity?, ServiceFlags>? OnServiceFlagsChanged;
         public event Action<NetEntity?, Vector2>? OnSetTargetCoordinates;
         public event Action<NetEntity?, bool>? OnSetHideTarget;
+        public event Action<NetEntity?, bool>? OnSetProximityAlert;
+        public event Action<NetEntity?, float>? OnSetProximityAlertRadius;
         public event Action<string, string>? OnNetworkPortButtonPressed;
         private void NfInitialize()
         {
@@ -31,6 +33,14 @@ namespace Content.Client.Shuttles.UI
             NavContainer.OnSetHideTarget += (entity, hide) =>
             {
                 OnSetHideTarget?.Invoke(entity, hide);
+            };
+            NavContainer.OnSetProximityAlert += (entity, enabled) =>
+            {
+                OnSetProximityAlert?.Invoke(entity, enabled);
+            };
+            NavContainer.OnSetProximityAlertRadius += (entity, radius) =>
+            {
+                OnSetProximityAlertRadius?.Invoke(entity, radius);
             };
             NavContainer.OnNetworkPortButtonPressed += (sourcePort, targetPort) =>
             {

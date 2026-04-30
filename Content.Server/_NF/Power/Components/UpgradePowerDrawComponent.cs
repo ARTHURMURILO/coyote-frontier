@@ -36,4 +36,11 @@ public sealed partial class UpgradePowerDrawComponent : Component
     /// </summary>
     [DataField("scaling", required: true), ViewVariables(VVAccess.ReadWrite)]
     public MachineUpgradeScalingType Scaling;
+
+    /// <summary>
+    /// Expected amount of this machine part for full upgrade effect.
+    /// Missing parts are treated as stock quality when scaling.
+    /// </summary>
+    [DataField("expectedPartCount")]
+    public int ExpectedPartCount = 1;
 }

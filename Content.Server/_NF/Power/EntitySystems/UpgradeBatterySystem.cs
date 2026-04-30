@@ -21,12 +21,31 @@ public sealed class UpgradeBatterySystem : EntitySystem
 
     public void OnRefreshParts(EntityUid uid, UpgradeBatteryComponent component, RefreshPartsEvent args)
     {
-        var powerCellRating = args.PartRatings[component.MachinePartPowerCapacity];
+        var powerCellRating = GetNormalizedRating(args, component.MachinePartPowerCapacity, component.ExpectedPartCount);
 
         if (TryComp<BatteryComponent>(uid, out var batteryComp))
         {
             _batterySystem.SetMaxCharge(uid, MathF.Pow(component.MaxChargeMultiplier, powerCellRating - 1) * component.BaseMaxCharge, batteryComp);
         }
+    }
+
+    private static float GetNormalizedRating(RefreshPartsEvent args, string partType, int expectedPartCount)
+    {
+        var averageRating = args.PartRatings[partType];
+        if (expectedPartCount <= 1)
+            return averageRating;
+
+        var quantity = 0;
+        foreach (var state in args.Parts)
+        {
+            if (state.Part.PartType != partType)
+                continue;
+
+            quantity += state.Quantity();
+        }
+
+        var fillRatio = MathF.Min(1f, quantity / (float) expectedPartCount);
+        return 1f + (averageRating - 1f) * fillRatio;
     }
 
     private void OnUpgradeExamine(EntityUid uid, UpgradeBatteryComponent component, UpgradeExamineEvent args)

@@ -1,7 +1,7 @@
 - type: rpiTaxBracket
   id: rpiTaxBracketDefault
   cashThreshold: -1
-  judgementPointPayout: 80
+  judgementPointPayout: 40
   deathPenalty: 0.10
   deepFriedPenalty: 0.25
   journalismDat:
@@ -31,7 +31,7 @@
 - type: rpiTaxBracket
   id: rpiTaxBracketBroke
   cashThreshold: 50000
-  judgementPointPayout: 300
+  judgementPointPayout: 150
   deathPenalty: 0.01
   deepFriedPenalty: 0.10
   journalismDat:
@@ -61,7 +61,7 @@
 - type: rpiTaxBracket
   id: rpiTaxBracketEstablished
   cashThreshold: 250000
-  judgementPointPayout: 200
+  judgementPointPayout: 100
   deathPenalty: 0.05
   deepFriedPenalty: 0.15
   journalismDat:
@@ -91,7 +91,7 @@
 - type: rpiTaxBracket
   id: rpiTaxBracketWealthy
   cashThreshold: 500000
-  judgementPointPayout: 100
+  judgementPointPayout: 50
   deathPenalty: 0.075
   deepFriedPenalty: 0.2
   journalismDat:

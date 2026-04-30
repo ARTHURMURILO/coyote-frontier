@@ -34,6 +34,24 @@ public sealed partial class RCDComponent : Component
     public ProtoId<RCDPrototype> ProtoId { get; set; } = "Invalid";
 
     /// <summary>
+    /// Indicates if a mirrored version of the construction prototype should be used (if available)
+    /// </summary>
+    [AutoNetworkedField, ViewVariables(VVAccess.ReadOnly)]
+    public bool UseMirrorPrototype = false;
+
+    /// <summary>
+    /// Indicates whether this is an RCD or an RPD
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool IsRpd { get; set; }
+
+    /// <summary>
+    /// Indicates if this RCD/RPD should construct instantly.
+    /// </summary>
+    [DataField, AutoNetworkedField]
+    public bool InstantConstruction { get; set; }
+
+    /// <summary>
     /// The direction constructed entities will face upon spawning
     /// </summary>
     [DataField, AutoNetworkedField]

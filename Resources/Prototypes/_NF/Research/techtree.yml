@@ -187,6 +187,8 @@
   recipeUnlocks:
   - ShipyardRCD
   - ShipyardRCDAmmo
+  - RPD
+  - RCDAmmo
   technologyPrerequisites:
   - NFMechanicalCompression
   position: 3, 1

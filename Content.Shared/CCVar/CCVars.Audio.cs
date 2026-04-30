@@ -64,4 +64,10 @@ public sealed partial class CCVars
         public static readonly CVarDef<float> AndyAnnouncementVolume =
             CVarDef.Create("audio.andy_announcement_volume", 1f, CVar.ARCHIVE | CVar.CLIENTONLY);
 
+        /// <summary>
+        ///     Whether Pocket Sized Andy announcements are played client-side.
+        /// </summary>
+        public static readonly CVarDef<bool> AndyAnnouncementsEnabled =
+            CVarDef.Create("audio.andy_announcements_enabled", true, CVar.ARCHIVE | CVar.CLIENTONLY);
+
 }

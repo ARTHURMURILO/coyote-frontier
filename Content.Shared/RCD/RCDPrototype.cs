@@ -45,6 +45,12 @@ public sealed partial class RCDPrototype : IPrototype
     public string? Prototype { get; private set; }
 
     /// <summary>
+    /// If the entity can be flipped, this prototype is available as an alternate (mode dependent)
+    /// </summary>
+    [DataField, ViewVariables(VVAccess.ReadOnly)]
+    public string? MirrorPrototype { get; private set; }
+
+    /// <summary>
     /// Number of charges consumed when the operation is completed
     /// </summary>
     [DataField, ViewVariables(VVAccess.ReadOnly)]
@@ -131,6 +137,7 @@ public enum RcdConstructionRule : byte
     MustBuildOnSubfloor,        // Can only be built on exposed subfloor (e.g. catwalks on lattice or hull plating)
     IsWindow,                   // The entity is a window and can be built on grilles
     IsCatwalk,                  // The entity is a catwalk
+    IsWallLight,                // The entity is a wall light
 }
 
 public enum RcdRotation : byte

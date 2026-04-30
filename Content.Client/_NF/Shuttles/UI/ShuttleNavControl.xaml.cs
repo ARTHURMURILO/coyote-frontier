@@ -44,6 +44,8 @@ public sealed partial class ShuttleNavControl
 
     public InertiaDampeningMode DampeningMode { get; set; }
     public ServiceFlags ServiceFlags { get; set; } = ServiceFlags.None;
+    public bool ProximityAlertEnabled { get; set; } = false;
+    public float ProximityAlertRadius { get; set; } = 128f;
 
     public Font FontHeart;
 
@@ -59,6 +61,8 @@ public sealed partial class ShuttleNavControl
         Target = state.Target;
         TargetEntity = state.TargetEntity;
         HideTarget = state.HideTarget;
+        ProximityAlertEnabled = state.ProximityAlertEnabled;
+        ProximityAlertRadius = state.ProximityAlertRadius;
 
         if (!EntManager.GetCoordinates(state.Coordinates).HasValue ||
             !EntManager.TryGetComponent(EntManager.GetCoordinates(state.Coordinates).GetValueOrDefault().EntityId, out TransformComponent? transform) ||

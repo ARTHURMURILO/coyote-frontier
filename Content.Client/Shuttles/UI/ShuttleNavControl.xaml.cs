@@ -152,6 +152,14 @@ public sealed partial class ShuttleNavControl : BaseShuttleControl
         DrawBacking(handle);
         DrawCircles(handle);
 
+        if (ProximityAlertEnabled && ProximityAlertRadius > 0f)
+        {
+            var proximityOrigin = ScalePosition(-new Vector2(Offset.X, -Offset.Y));
+            var scaledRadius = MinimapScale * ProximityAlertRadius;
+            var proximityColor = Color.LightBlue.WithAlpha(0.45f);
+            handle.DrawCircle(proximityOrigin, scaledRadius, proximityColor, false);
+        }
+
         // No data
         if (_coordinates == null || _rotation == null)
         {

@@ -127,6 +127,8 @@
       amount: 2
       prob: 0.25
     # Circuit boards
+    - id: WallmountForceFieldGeneratorMachineCircuitboard
+      prob: 0.1
   #  - id: SpawnDungeonLootCircuitBoardEngi
   #    amount: 1
   #    prob: 0.8
@@ -161,17 +163,19 @@
       prob: 1.0
     # Parts
     - id: QuadraticCapacitorStockPart
-      prob: 0.05
+      prob: 0.095
     - id: FemtoManipulatorStockPart
-      prob: 0.05
+      prob: 0.095
     - id: BluespaceMatterBinStockPart
-      prob: 0.05
+      prob: 0.095
     - id: SpawnDungeonLootPowerCell
       prob: 0.25
     - id: SpawnDungeonLootPartsEngi
       amount: 3
       prob: 0.25
     # Circuit boards
+    - id: WallmountForceFieldGeneratorMachineCircuitboard
+      prob: 0.12
   #  - id: SpawnDungeonLootCircuitBoardEngi
   #    amount: 1
   #    prob: 0.7
@@ -209,17 +213,19 @@
       prob: 0.1
     # Parts
     - id: QuadraticCapacitorStockPart
-      prob: 0.05
+      prob: 0.095
     - id: FemtoManipulatorStockPart
-      prob: 0.05
+      prob: 0.095
     - id: BluespaceMatterBinStockPart
-      prob: 0.05
+      prob: 0.095
     - id: SpawnDungeonLootPowerCell
       prob: 0.05
     - id: SpawnDungeonLootPartsEngi
       amount: 3
       prob: 0.25
     # Circuit boards
+    - id: WallmountForceFieldGeneratorMachineCircuitboard
+      prob: 0.15
    # - id: SpawnDungeonLootCircuitBoardEngi
    #   amount: 1
    #   prob: 0.8

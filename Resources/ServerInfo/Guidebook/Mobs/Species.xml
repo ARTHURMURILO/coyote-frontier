@@ -41,6 +41,11 @@
   <GuideEntityEmbed Entity="MobOvinia" Caption="Ovinia"/>
   <GuideEntityEmbed Entity="MobChitinid" Caption="Chitinid"/>
   </Box>
+  # Starlight specific species
+  <Box>
+  <GuideEntityEmbed Entity="MobAvali" Caption="Avali"/>
+  <GuideEntityEmbed Entity="MobResomi" Caption="Resomi"/>
+  </Box>
   # Coyote Sector specific species
   <Box>
   <GuideEntityEmbed Entity="MobAnthromorph" Caption="Anthromorph"/>

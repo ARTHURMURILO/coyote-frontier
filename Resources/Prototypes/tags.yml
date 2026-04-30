@@ -1144,6 +1144,9 @@
   id: PowerCage
 
 - type: Tag
+  id: Capacitor
+
+- type: Tag
   id: PowerCell
 
 - type: Tag

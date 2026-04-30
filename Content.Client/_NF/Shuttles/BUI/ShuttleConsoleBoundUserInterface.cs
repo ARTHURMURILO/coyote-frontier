@@ -17,6 +17,8 @@ namespace Content.Client.Shuttles.BUI
             _window.OnServiceFlagsChanged += OnServiceFlagsChanged;
             _window.OnSetTargetCoordinates += OnSetTargetCoordinates;
             _window.OnSetHideTarget += OnSetHideTarget;
+            _window.OnSetProximityAlert += OnSetProximityAlert;
+            _window.OnSetProximityAlertRadius += OnSetProximityAlertRadius;
             _window.RequestTrackEntity += OnTrackEntity;
             _window.OnNetworkPortButtonPressed += OnNetworkPortButtonPressed;
         }
@@ -53,6 +55,24 @@ namespace Content.Client.Shuttles.BUI
             SendMessage(new SetHideTargetRequest
             {
                 Hidden = hide
+            });
+        }
+
+        private void OnSetProximityAlert(NetEntity? entityUid, bool enabled)
+        {
+            SendMessage(new SetProximityAlertRequest
+            {
+                ShuttleEntityUid = entityUid,
+                Enabled = enabled,
+            });
+        }
+
+        private void OnSetProximityAlertRadius(NetEntity? entityUid, float radius)
+        {
+            SendMessage(new SetProximityAlertRadiusRequest
+            {
+                ShuttleEntityUid = entityUid,
+                Radius = radius,
             });
         }
 

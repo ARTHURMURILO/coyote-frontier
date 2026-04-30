@@ -16,8 +16,12 @@ namespace Content.Client.Shuttles.UI
         public event Action<NetEntity?, ServiceFlags>? OnServiceFlagsChanged;
         public event Action<NetEntity?, Vector2>? OnSetTargetCoordinates;
         public event Action<NetEntity?, bool>? OnSetHideTarget;
+        public event Action<NetEntity?, bool>? OnSetProximityAlert;
+        public event Action<NetEntity?, float>? OnSetProximityAlertRadius;
 
         private bool _targetCoordsModified = false;
+        private bool _updatingProximityAlertToggle = false;
+        private bool _updatingProximityAlertRadius = false;
         public event Action<string, string>? OnNetworkPortButtonPressed;
 
         private void NfInitialize()
@@ -57,6 +61,42 @@ namespace Content.Client.Shuttles.UI
             TargetY.OnTextChanged += _ => _targetCoordsModified = true;
             TargetSet.OnPressed += _ => SetTargetCoords();
             TargetShow.OnPressed += _ => SetHideTarget(!TargetShow.Pressed);
+
+            ProximityAlertToggle.OnToggled += OnProximityAlertChanged;
+            ProximityAlertRadiusValue.GetChild(0).GetChild(1).Margin = new Thickness(8, 0, 0, 0);
+            ProximityAlertRadiusValue.OnValueChanged += OnProximityAlertRadiusChanged;
+        }
+
+        private void OnProximityAlertChanged(BaseButton.ButtonToggledEventArgs args)
+        {
+            if (_updatingProximityAlertToggle)
+                return;
+
+            NavRadar.ProximityAlertEnabled = args.Pressed;
+            SetProximityRadiusUiLocked(args.Pressed);
+            _entManager.TryGetNetEntity(_shuttleEntity, out var shuttle);
+            OnSetProximityAlert?.Invoke(shuttle, args.Pressed);
+        }
+
+        private void SetProximityRadiusUiLocked(bool locked)
+        {
+            if (ProximityAlertRadiusValue.GetChild(0).GetChild(0) is Slider slider)
+                slider.Disabled = locked;
+
+            if (ProximityAlertRadiusValue.GetChild(0).GetChild(1) is SpinBox spinBox)
+            {
+                spinBox.LineEditDisabled = locked;
+                spinBox.SetButtonDisabled(locked);
+            }
+        }
+
+        private void OnProximityAlertRadiusChanged(int value)
+        {
+            if (_updatingProximityAlertRadius)
+                return;
+
+            _entManager.TryGetNetEntity(_shuttleEntity, out var shuttle);
+            OnSetProximityAlertRadius?.Invoke(shuttle, value);
         }
 
         private void OnPortButtonPressed(string sourcePort, string targetPort)
@@ -103,6 +143,16 @@ namespace Content.Client.Shuttles.UI
                     TargetY.Text = 0.0f.ToString("F1");
                 }
             }
+
+            _updatingProximityAlertToggle = true;
+            ProximityAlertToggle.Pressed = state.ProximityAlertEnabled;
+            _updatingProximityAlertToggle = false;
+            NavRadar.ProximityAlertEnabled = state.ProximityAlertEnabled;
+            SetProximityRadiusUiLocked(state.ProximityAlertEnabled);
+
+            _updatingProximityAlertRadius = true;
+            ProximityAlertRadiusValue.Value = (int) state.ProximityAlertRadius;
+            _updatingProximityAlertRadius = false;
         }
 
         private void OnRangeFilterChanged(int value)

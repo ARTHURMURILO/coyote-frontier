@@ -23,4 +23,11 @@ public sealed partial class UpgradeBatteryComponent : Component
     /// </summary>
     [DataField("baseMaxCharge")]
     public float BaseMaxCharge = 8000000;
+
+    /// <summary>
+    /// Expected amount of this machine part for full upgrade effect.
+    /// Missing parts are treated as stock quality when scaling.
+    /// </summary>
+    [DataField("expectedPartCount")]
+    public int ExpectedPartCount = 1;
 }

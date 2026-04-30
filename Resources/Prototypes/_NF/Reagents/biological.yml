@@ -63,18 +63,18 @@
           showInChat: true
           force: true
           probability: 0.18
-        - !type:Polymorph
-          prototype: ArtifactMonkey
-          conditions:
-            - !type:NFIsHumanoid
-            - !type:ReagentThreshold
-              min: 50
-        - !type:AdjustReagent
-          reagent: Primatine
-          amount: -20
-          conditions:
-            - !type:ReagentThreshold
-              min: 50
+#        - !type:Polymorph # Coyote edit: no forced TF
+#          prototype: ArtifactMonkey
+#          conditions:
+#            - !type:NFIsHumanoid
+#            - !type:ReagentThreshold
+#              min: 50
+#        - !type:AdjustReagent
+#          reagent: Primatine
+#          amount: -20
+#          conditions:
+#            - !type:ReagentThreshold
+#              min: 50
         - !type:GenericStatusEffect
           key: Stutter
           component: ScrambledAccent

@@ -158,8 +158,8 @@
     - id: GasAnalyzer
     - id: MedkitOxygenFilled
     - id: HolofanProjector
+    - id: RPD
     # - id: RCD # Frontier
-    # - id: RCDAmmo # Frontier
     - id: AirGrenade
     - id: ClothingHandsGlovesColorYellow # Frontier
     - id: trayScanner # Frontier

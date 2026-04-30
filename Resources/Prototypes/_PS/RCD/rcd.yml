@@ -1,0 +1,11 @@
+- type: rcd
+  id: WallShuttle
+  category: WallsAndFlooring
+  sprite: { sprite: Structures/Walls/shuttle.rsi, state: full }
+  mode: ConstructObject
+  prototype: WallShuttle
+  cost: 3
+  delay: 1
+  collisionMask: FullTileMask
+  rotation: Fixed
+  fx: EffectRCDConstruct2

@@ -79,7 +79,9 @@ public abstract partial class SharedSalvageSystem : EntitySystem
             mods.Add(Loc.GetString(light.Description));
         }
 
-        var duration = TimeSpan.FromSeconds(CfgManager.GetCVar(CCVars.SalvageExpeditionDuration));
+        var configuredDurationSeconds = CfgManager.GetCVar(CCVars.SalvageExpeditionDuration);
+        var durationSeconds = MathF.Max(CCVars.SalvageExpeditionDuration.DefaultValue, configuredDurationSeconds);
+        var duration = TimeSpan.FromSeconds(durationSeconds);
 
         return new SalvageMission(seed, dungeon.ID, faction.ID, biome.ID, air.ID, temp.Temperature, light.Color, duration, mods, difficulty.ID, config); // Frontier: add difficulty.ID, config
     }

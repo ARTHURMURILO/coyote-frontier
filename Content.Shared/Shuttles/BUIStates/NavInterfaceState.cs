@@ -60,6 +60,16 @@ public sealed class NavInterfaceState
     /// Frontier: whether or not to show the target coords
     /// </summary>
     public bool HideTarget = true;
+
+    /// <summary>
+    /// Frontier: whether proximity alert sounds are enabled for this console.
+    /// </summary>
+    public bool ProximityAlertEnabled = false;
+
+    /// <summary>
+    /// Frontier: radar proximity alert scan radius for this console.
+    /// </summary>
+    public float ProximityAlertRadius = 128f;
     // End Frontier fields
 
     // Wayfarer fields
@@ -83,6 +93,8 @@ public sealed class NavInterfaceState
         Vector2? target, // Frontier
         NetEntity? targetEntity, // Frontier
         bool hideTarget, // Frontier
+        bool proximityAlertEnabled, // Frontier
+        float proximityAlertRadius, // Frontier
         bool autopilotEnabled = false, // Wayfarer
         bool hasAutopilotServer = false) // Wayfarer
     {
@@ -95,6 +107,8 @@ public sealed class NavInterfaceState
         Target = target; // Frontier
         TargetEntity = targetEntity; // Frontier
         HideTarget = hideTarget; // Frontier
+        ProximityAlertEnabled = proximityAlertEnabled; // Frontier
+        ProximityAlertRadius = proximityAlertRadius; // Frontier
         AutopilotEnabled = autopilotEnabled; // Wayfarer
         HasAutopilotServer = hasAutopilotServer; // Wayfarer
     }
