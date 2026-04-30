@@ -63,35 +63,91 @@
 
                 <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
-                <Label Text="── CREW/MOBS ──" FontColorOverride="#888888" />
-                <BoxContainer Orientation="Horizontal" SeparationOverride="8">
-                    <CheckBox Name="VisionPeopleCheck" Text="Show People" />
+                <Label Text="▼ LOCAL" FontColorOverride="#FFA500" />
+                <BoxContainer Name="LocalVisionSection" Orientation="Vertical" SeparationOverride="4" Margin="8 0 0 0">
+
+                    <Label Text="── CREW/MOBS ──" FontColorOverride="#888888" />
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                        <CheckBox Name="VisionPeopleLocalCheck" Text="Show People" />
+                    </BoxContainer>
+
+                    <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                    <Label Text="── MACHINES/COMPUTERS ──" FontColorOverride="#888888" />
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                        <CheckBox Name="VisionMachinesLocalCheck" Text="Show Machines" />
+                    </BoxContainer>
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                        <CheckBox Name="VisionMachinesDetailLocalCheck" Text="Details (description, powered, distance, direction)" />
+                    </BoxContainer>
+
+                    <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                    <Label Text="── ITEMS ──" FontColorOverride="#888888" />
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                        <Label Text="Item mode:" MinSize="80 30" VerticalAlignment="Center" />
+                        <OptionButton Name="LocalItemModeDropdown" MinSize="140 30" />
+                    </BoxContainer>
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                        <CheckBox Name="VisionItemsLocalCheck" Text="Show Items" />
+                    </BoxContainer>
+                    <BoxContainer Name="LocalItemDetailCheckContainer" Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                        <CheckBox Name="VisionItemsDetailLocalCheck" Text="Details (description, legality, amount, direction)" />
+                    </BoxContainer>
+
                 </BoxContainer>
 
                 <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
-                <Label Text="── MACHINES/COMPUTERS ──" FontColorOverride="#888888" />
-                <BoxContainer Orientation="Horizontal" SeparationOverride="8">
-                    <CheckBox Name="VisionMachinesCheck" Text="Show Machines" />
-                </BoxContainer>
-                <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
-                    <CheckBox Name="VisionMachinesDetailCheck" Text="Details (description, powered, distance, direction)" />
-                </BoxContainer>
+                <Label Text="▼ GLOBAL (CAMERAS)" FontColorOverride="#FFA500" />
+                <BoxContainer Name="GlobalVisionSection" Orientation="Vertical" SeparationOverride="4" Margin="8 0 0 0">
 
-                <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                        <CheckBox Name="GlobalVisionEnabledCheck" Text="Enable Camera Vision (Master Switch)" />
+                    </BoxContainer>
 
-                <Label Text="── ITEMS ──" FontColorOverride="#888888" />
-                <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
-                    <Label Text="Item mode:" MinSize="80 30" VerticalAlignment="Center" />
-                    <OptionButton Name="ItemModeDropdown" MinSize="140 30" />
-                </BoxContainer>
-                <BoxContainer Orientation="Horizontal" SeparationOverride="8">
-                    <CheckBox Name="VisionItemsCheck" Text="Show Items" />
-                </BoxContainer>
-                <BoxContainer Name="ItemDetailCheckContainer" Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
-                    <CheckBox Name="VisionItemsDetailCheck" Text="Details (description, legality, amount, direction)" />
+                    <BoxContainer Name="GlobalCameraSubnetContainer" Orientation="Vertical" SeparationOverride="2" Margin="16 0 0 0" />
+
+                    <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                    <Label Text="── PEOPLE ──" FontColorOverride="#888888" />
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                        <CheckBox Name="VisionPeopleGlobalCheck" Text="Show People" />
+                    </BoxContainer>
+
+                    <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                    <Label Text="── MACHINES/COMPUTERS ──" FontColorOverride="#888888" />
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                        <CheckBox Name="VisionMachinesGlobalCheck" Text="Show Machines" />
+                    </BoxContainer>
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                        <CheckBox Name="VisionMachinesDetailGlobalCheck" Text="Show machine names" />
+                    </BoxContainer>
+
+                    <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                    <Label Text="── ITEMS ──" FontColorOverride="#888888" />
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                        <Label Text="Item mode:" MinSize="80 30" VerticalAlignment="Center" />
+                        <OptionButton Name="GlobalItemModeDropdown" MinSize="140 30" />
+                    </BoxContainer>
+                    <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                        <CheckBox Name="VisionItemsGlobalCheck" Text="Show Items" />
+                    </BoxContainer>
+                    <BoxContainer Name="GlobalItemDetailCheckContainer" Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                        <CheckBox Name="VisionItemsDetailGlobalCheck" Text="Details" />
+                    </BoxContainer>
+
                 </BoxContainer>
             </BoxContainer>
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <Button Name="RadioToggle" Text="▼ RADIO" MinSize="0 30" Margin="0 4" />
+            <BoxContainer Name="RadioSection" Orientation="Vertical" SeparationOverride="4" Visible="True">
+                <BoxContainer Name="RadioChannelContainer" Orientation="Vertical" SeparationOverride="2" />
+            </BoxContainer>
+
             <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
             <Label Name="HistoryLabel" Text="" FontColorOverride="#888888" />

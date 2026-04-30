@@ -13,7 +13,7 @@ namespace Content.Client._CS.AICore;
 [GenerateTypedNameReferences]
 public sealed partial class CoyoteAIConfigMenu : FancyWindow
 {
-    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax, List<AICoreMemory>? memories, ItemVisionMode itemMode, string[] channelLabels);
+    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax, List<AICoreMemory>? memories, ItemVisionMode localItemMode, string[] channelLabels);
     public event SaveDelegate? OnSave;
     public event Action? OnResetHistory;
     public event Action<int, LogicChannelMode>? OnSetChannel;
@@ -22,7 +22,11 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
     public event Action? OnUnclaim;
     public event Action<string, bool>? OnSetVisionOption;
     public event Action<ItemVisionMode>? OnSetItemMode;
+    public event Action<string, bool>? OnSetGlobalVisionOption;
+    public event Action<ItemVisionMode>? OnSetGlobalItemMode;
+    public event Action<string, bool>? OnSetCameraSubnet;
     public event Action<bool>? OnSetEnabled;
+    public event Action<string, bool>? OnSetRadioChannel;
     public event Action? OnExport;
     public event Action<string>? OnImport;
     public event Action<string, MemoryPriority, List<string>>? OnAddMemory;
@@ -37,9 +41,12 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
     private readonly Dictionary<Button, float> _confirmTimers = new();
     private readonly Dictionary<Button, string> _confirmDefaults = new();
     private readonly Dictionary<Button, Action> _confirmActions = new();
+    private readonly Dictionary<string, CheckBox> _radioChannelChecks = new();
+    private readonly Dictionary<string, CheckBox> _cameraSubnetChecks = new();
 
     private bool _advancedExpanded;
     private bool _visionExpanded = true;
+    private bool _radioExpanded = true;
     private bool _logicChannelsExpanded;
     private List<AICoreMemory> _memories = new();
     private readonly HashSet<string> _expandedMemoryIds = new();
@@ -129,30 +136,59 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
 
         BuildChannelRows();
 
-        VisionPeopleCheck.OnPressed += _ => OnSetVisionOption?.Invoke("ShowPeople", VisionPeopleCheck.Pressed);
-        VisionMachinesCheck.OnPressed += _ =>
+        // Local vision wiring
+        VisionPeopleLocalCheck.OnPressed += _ => OnSetVisionOption?.Invoke("ShowPeople", VisionPeopleLocalCheck.Pressed);
+        VisionMachinesLocalCheck.OnPressed += _ =>
         {
-            OnSetVisionOption?.Invoke("ShowMachines", VisionMachinesCheck.Pressed);
-            VisionMachinesDetailCheck.Disabled = !VisionMachinesCheck.Pressed;
+            OnSetVisionOption?.Invoke("ShowMachines", VisionMachinesLocalCheck.Pressed);
+            VisionMachinesDetailLocalCheck.Disabled = !VisionMachinesLocalCheck.Pressed;
         };
-        VisionMachinesDetailCheck.OnPressed += _ => OnSetVisionOption?.Invoke("ShowMachinesDetail", VisionMachinesDetailCheck.Pressed);
-        VisionItemsCheck.OnPressed += _ =>
+        VisionMachinesDetailLocalCheck.OnPressed += _ => OnSetVisionOption?.Invoke("ShowMachinesDetail", VisionMachinesDetailLocalCheck.Pressed);
+        VisionItemsLocalCheck.OnPressed += _ =>
         {
-            OnSetVisionOption?.Invoke("ShowItems", VisionItemsCheck.Pressed);
-            VisionItemsDetailCheck.Disabled = !VisionItemsCheck.Pressed;
+            OnSetVisionOption?.Invoke("ShowItems", VisionItemsLocalCheck.Pressed);
+            VisionItemsDetailLocalCheck.Disabled = !VisionItemsLocalCheck.Pressed;
         };
-        VisionItemsDetailCheck.OnPressed += _ => OnSetVisionOption?.Invoke("ShowItemsDetail", VisionItemsDetailCheck.Pressed);
+        VisionItemsDetailLocalCheck.OnPressed += _ => OnSetVisionOption?.Invoke("ShowItemsDetail", VisionItemsDetailLocalCheck.Pressed);
 
-        ItemModeDropdown.AddItem("Feed All");
-        ItemModeDropdown.AddItem("Smart Summary");
-        ItemModeDropdown.AddItem("Search Engine");
-        ItemModeDropdown.SelectId(2);
-        ItemModeDropdown.OnItemSelected += args =>
+        LocalItemModeDropdown.AddItem("Feed All");
+        LocalItemModeDropdown.AddItem("Smart Summary");
+        LocalItemModeDropdown.AddItem("Search Engine");
+        LocalItemModeDropdown.SelectId(2);
+        LocalItemModeDropdown.OnItemSelected += args =>
         {
-            ItemModeDropdown.SelectId(args.Id);
+            LocalItemModeDropdown.SelectId(args.Id);
             var mode = (ItemVisionMode)args.Id;
-            ItemDetailCheckContainer.Visible = mode == ItemVisionMode.FeedAll;
+            LocalItemDetailCheckContainer.Visible = mode == ItemVisionMode.FeedAll;
             OnSetItemMode?.Invoke(mode);
+        };
+
+        // Global vision wiring
+        GlobalVisionEnabledCheck.OnPressed += _ => OnSetGlobalVisionOption?.Invoke("GlobalVisionEnabled", GlobalVisionEnabledCheck.Pressed);
+        VisionPeopleGlobalCheck.OnPressed += _ => OnSetGlobalVisionOption?.Invoke("ShowPeopleGlobal", VisionPeopleGlobalCheck.Pressed);
+        VisionMachinesGlobalCheck.OnPressed += _ =>
+        {
+            OnSetGlobalVisionOption?.Invoke("ShowMachinesGlobal", VisionMachinesGlobalCheck.Pressed);
+            VisionMachinesDetailGlobalCheck.Disabled = !VisionMachinesGlobalCheck.Pressed;
+        };
+        VisionMachinesDetailGlobalCheck.OnPressed += _ => OnSetGlobalVisionOption?.Invoke("ShowMachinesDetailGlobal", VisionMachinesDetailGlobalCheck.Pressed);
+        VisionItemsGlobalCheck.OnPressed += _ =>
+        {
+            OnSetGlobalVisionOption?.Invoke("ShowItemsGlobal", VisionItemsGlobalCheck.Pressed);
+            VisionItemsDetailGlobalCheck.Disabled = !VisionItemsGlobalCheck.Pressed;
+        };
+        VisionItemsDetailGlobalCheck.OnPressed += _ => OnSetGlobalVisionOption?.Invoke("ShowItemsDetailGlobal", VisionItemsDetailGlobalCheck.Pressed);
+
+        GlobalItemModeDropdown.AddItem("Feed All");
+        GlobalItemModeDropdown.AddItem("Smart Summary");
+        GlobalItemModeDropdown.AddItem("Search Engine");
+        GlobalItemModeDropdown.SelectId(2);
+        GlobalItemModeDropdown.OnItemSelected += args =>
+        {
+            GlobalItemModeDropdown.SelectId(args.Id);
+            var mode = (ItemVisionMode)args.Id;
+            GlobalItemDetailCheckContainer.Visible = mode == ItemVisionMode.FeedAll;
+            OnSetGlobalItemMode?.Invoke(mode);
         };
 
         VisionToggle.OnPressed += _ =>
@@ -168,6 +204,15 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
             LogicChannelsToggle.Text = _logicChannelsExpanded ? "▼ LOGIC CHANNELS" : "▶ LOGIC CHANNELS";
             LogicChannelsSection.Visible = _logicChannelsExpanded;
         };
+
+        RadioToggle.OnPressed += _ =>
+        {
+            _radioExpanded = !_radioExpanded;
+            RadioToggle.Text = _radioExpanded ? "▼ RADIO" : "▶ RADIO";
+            RadioSection.Visible = _radioExpanded;
+        };
+
+        BuildRadioCheckboxes();
     }
 
     private void PerformSave()
@@ -213,7 +258,7 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         for (int i = 0; i < 20; i++)
             labels[i] = _channelLabelEdits[i]?.Text ?? string.Empty;
 
-        OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax, _memories, (ItemVisionMode)ItemModeDropdown.SelectedId, labels);
+        OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax, _memories, (ItemVisionMode)LocalItemModeDropdown.SelectedId, labels);
     }
 
     private void SetupConfirmButton(Button btn, string defaultText, Action onConfirm)
@@ -325,6 +370,68 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
     {
     }
 
+    private void BuildRadioCheckboxes()
+    {
+        RadioChannelContainer.Children.Clear();
+        _radioChannelChecks.Clear();
+
+        var rowContainer = new BoxContainer
+        {
+            Orientation = BoxContainer.LayoutOrientation.Vertical,
+            SeparationOverride = 2
+        };
+
+        foreach (var ch in CoyoteAICoreComponent.AvailableRadioChannels)
+        {
+            var check = new CheckBox
+            {
+                Text = ch,
+                Pressed = true
+            };
+            check.OnPressed += _ =>
+            {
+                OnSetRadioChannel?.Invoke(ch, check.Pressed);
+            };
+            _radioChannelChecks[ch] = check;
+            rowContainer.AddChild(check);
+        }
+
+        RadioChannelContainer.AddChild(rowContainer);
+    }
+
+    private void BuildCameraSubnetCheckboxes(Dictionary<string, int> availableSubnets, HashSet<string> enabledSubnets)
+    {
+        GlobalCameraSubnetContainer.Children.Clear();
+        _cameraSubnetChecks.Clear();
+
+        if (availableSubnets.Count == 0)
+        {
+            GlobalCameraSubnetContainer.AddChild(new Label
+            {
+                Text = "No cameras detected on current grid.",
+                FontColorOverride = Color.Gray
+            });
+            return;
+        }
+
+        foreach (var (subnetId, cameraCount) in availableSubnets.OrderBy(kv => kv.Key))
+        {
+            var subnetName = subnetId.Replace("SurveillanceCamera", "");
+            var check = new CheckBox
+            {
+                Text = $"{subnetName} ({cameraCount} cameras)",
+                Pressed = enabledSubnets.Contains(subnetId)
+            };
+            var capturedId = subnetId;
+            check.OnPressed += _ =>
+            {
+                OnSetCameraSubnet?.Invoke(capturedId, check.Pressed);
+            };
+            _cameraSubnetChecks[subnetId] = check;
+            GlobalCameraSubnetContainer.AddChild(check);
+        }
+    }
+
     private void BuildTokenBar(CoyoteAIConfigBuiState state)
     {
         TokenBarContainer.Children.Clear();
@@ -336,7 +443,8 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
 
         var segments = new (string label, int tokens, Color color)[]
         {
-            ("Vision", state.TokenVision, new Color(0.90f, 0.49f, 0.13f)),
+            ("Local Vision", state.TokenLocalVision, new Color(0.90f, 0.49f, 0.13f)),
+            ("Global Vision", state.TokenGlobalVision, new Color(0.95f, 0.75f, 0.05f)),
             ("System", state.TokenSystem, new Color(0.29f, 0.56f, 0.85f)),
             ("Person/Lore", state.TokenPersonLore, new Color(0.31f, 0.78f, 0.47f)),
             ("Crew/Xeno", state.TokenCrewXeno, new Color(0.96f, 0.65f, 0.14f)),
@@ -577,13 +685,27 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         _expandedMemoryIds.RemoveWhere(id => !_memories.Any(m => m.Id == id));
         BuildMemoryRows();
 
-        VisionPeopleCheck.Pressed = state.ShowPeople;
-        VisionMachinesCheck.Pressed = state.ShowMachines;
-        VisionMachinesDetailCheck.Pressed = state.ShowMachinesDetail;
-        VisionMachinesDetailCheck.Disabled = !state.ShowMachines;
-        VisionItemsCheck.Pressed = state.ShowItems;
-        VisionItemsDetailCheck.Pressed = state.ShowItemsDetail;
-        VisionItemsDetailCheck.Disabled = !state.ShowItems;
+        // Local vision
+        VisionPeopleLocalCheck.Pressed = state.ShowPeopleLocal;
+        VisionMachinesLocalCheck.Pressed = state.ShowMachinesLocal;
+        VisionMachinesDetailLocalCheck.Pressed = state.ShowMachinesDetailLocal;
+        VisionMachinesDetailLocalCheck.Disabled = !state.ShowMachinesLocal;
+        VisionItemsLocalCheck.Pressed = state.ShowItemsLocal;
+        VisionItemsDetailLocalCheck.Pressed = state.ShowItemsDetailLocal;
+        VisionItemsDetailLocalCheck.Disabled = !state.ShowItemsLocal;
+
+        // Global vision
+        GlobalVisionEnabledCheck.Pressed = state.GlobalVisionEnabled;
+        VisionPeopleGlobalCheck.Pressed = state.ShowPeopleGlobal;
+        VisionMachinesGlobalCheck.Pressed = state.ShowMachinesGlobal;
+        VisionMachinesDetailGlobalCheck.Pressed = state.ShowMachinesDetailGlobal;
+        VisionMachinesDetailGlobalCheck.Disabled = !state.ShowMachinesGlobal;
+        VisionItemsGlobalCheck.Pressed = state.ShowItemsGlobal;
+        VisionItemsDetailGlobalCheck.Pressed = state.ShowItemsDetailGlobal;
+        VisionItemsDetailGlobalCheck.Disabled = !state.ShowItemsGlobal;
+
+        // Global subnet checkboxes
+        BuildCameraSubnetCheckboxes(state.AvailableCameraSubnets, state.EnabledCameraSubnets);
 
         if (!state.RefreshOnly)
         {
@@ -598,8 +720,11 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
             EnabledButton.Pressed = state.Enabled;
             ReasoningDropdown.SelectId((int)state.ReasoningLevelData);
 
-            ItemModeDropdown.SelectId((int)state.ItemMode);
-            ItemDetailCheckContainer.Visible = state.ItemMode == ItemVisionMode.FeedAll;
+            LocalItemModeDropdown.SelectId((int)state.LocalItemMode);
+            LocalItemDetailCheckContainer.Visible = state.LocalItemMode == ItemVisionMode.FeedAll;
+
+            GlobalItemModeDropdown.SelectId((int)state.GlobalItemMode);
+            GlobalItemDetailCheckContainer.Visible = state.GlobalItemMode == ItemVisionMode.FeedAll;
 
             CooldownBaseEdit.Text = state.CooldownBase.ToString("F1");
             CooldownCharFactorEdit.Text = state.CooldownCharFactor.ToString("F3");
@@ -632,6 +757,12 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
                 ApiKeyEdit.PlaceHolder = "No API key set";
                 ApiKeyStatus.Text = "Enter an API key above to configure one.";
             }
+        }
+
+        foreach (var ch in CoyoteAICoreComponent.AvailableRadioChannels)
+        {
+            if (_radioChannelChecks.TryGetValue(ch, out var check))
+                check.Pressed = state.RadioChannels.Contains(ch);
         }
 
         for (int i = 0; i < 20 && i < state.ChannelStates.Length; i++)

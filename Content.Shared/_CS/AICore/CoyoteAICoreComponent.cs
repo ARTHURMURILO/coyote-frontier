@@ -21,7 +21,14 @@ public sealed partial class CoyoteAICoreComponent : Component
     [DataField][AutoNetworkedField] public float VisionRange = 15f;
     [DataField][AutoNetworkedField] public HashSet<string> RadioChannels = new()
     {
-        "Common", "Command", "Engineering", "Medical", "Science", "Security", "Service", "Supply"
+        "Common", "Engineering", "Medical", "Science", "Security", "Service", "Supply",
+        "Handheld", "Binary", "Freelance", "Traffic"
+    };
+
+    public static readonly string[] AvailableRadioChannels =
+    {
+        "Common", "Command", "Engineering", "Medical", "Science", "Security",
+        "Service", "Supply", "Handheld", "Binary", "Freelance", "Traffic", "Nfsd"
     };
     [DataField][AutoNetworkedField] public int MaxHistoryLength = 200;
     [DataField][AutoNetworkedField] public int MaxTokens = 128000;
@@ -31,13 +38,23 @@ public sealed partial class CoyoteAICoreComponent : Component
     [DataField][AutoNetworkedField] public string OwnerName = string.Empty;
     [DataField][AutoNetworkedField] public bool IsLocked;
 
-    [DataField][AutoNetworkedField] public bool ShowPeople = true;
-    [DataField][AutoNetworkedField] public bool ShowMachines = true;
-    [DataField][AutoNetworkedField] public bool ShowMachinesDetail;
-    [DataField][AutoNetworkedField] public bool ShowItems = true;
-    [DataField][AutoNetworkedField] public bool ShowItemsDetail;
+    [DataField][AutoNetworkedField] public bool ShowPeopleLocal = true;
+    [DataField][AutoNetworkedField] public bool ShowMachinesLocal = true;
+    [DataField][AutoNetworkedField] public bool ShowMachinesDetailLocal;
+    [DataField][AutoNetworkedField] public bool ShowItemsLocal = true;
+    [DataField][AutoNetworkedField] public bool ShowItemsDetailLocal;
 
-    [DataField][AutoNetworkedField] public ItemVisionMode ItemMode = ItemVisionMode.SearchEngine;
+    [DataField][AutoNetworkedField] public ItemVisionMode LocalItemMode = ItemVisionMode.SearchEngine;
+
+    // Global (Camera) Vision
+    [DataField][AutoNetworkedField] public bool GlobalVisionEnabled;
+    [DataField][AutoNetworkedField] public bool ShowPeopleGlobal = true;
+    [DataField][AutoNetworkedField] public bool ShowMachinesGlobal = true;
+    [DataField][AutoNetworkedField] public bool ShowMachinesDetailGlobal;
+    [DataField][AutoNetworkedField] public bool ShowItemsGlobal = true;
+    [DataField][AutoNetworkedField] public bool ShowItemsDetailGlobal;
+    [DataField][AutoNetworkedField] public ItemVisionMode GlobalItemMode = ItemVisionMode.SearchEngine;
+    [DataField][AutoNetworkedField] public List<string> EnabledCameraSubnets = new();
 
     [DataField] public string LoreNotes = string.Empty;
 

@@ -72,12 +72,26 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
     public bool LockedView;
     public bool RefreshOnly;
 
-    public bool ShowPeople = true;
-    public bool ShowMachines = true;
-    public bool ShowMachinesDetail;
-    public bool ShowItems = true;
-    public bool ShowItemsDetail;
-    public ItemVisionMode ItemMode = ItemVisionMode.SearchEngine;
+    // Local vision
+    public bool ShowPeopleLocal = true;
+    public bool ShowMachinesLocal = true;
+    public bool ShowMachinesDetailLocal;
+    public bool ShowItemsLocal = true;
+    public bool ShowItemsDetailLocal;
+    public ItemVisionMode LocalItemMode = ItemVisionMode.SearchEngine;
+
+    // Global (Camera) vision
+    public bool GlobalVisionEnabled;
+    public bool ShowPeopleGlobal = true;
+    public bool ShowMachinesGlobal = true;
+    public bool ShowMachinesDetailGlobal;
+    public bool ShowItemsGlobal = true;
+    public bool ShowItemsDetailGlobal;
+    public ItemVisionMode GlobalItemMode = ItemVisionMode.SearchEngine;
+    public HashSet<string> EnabledCameraSubnets = new();
+    public int TokenLocalVision;
+    public int TokenGlobalVision;
+    public Dictionary<string, int> AvailableCameraSubnets = new();
 
     public float VisionRange;
 
@@ -108,6 +122,9 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
     // AI Self-lock
     public bool AiLocked;
 
+    // Radio channels
+    public HashSet<string> RadioChannels = new();
+
     // Memories
     public List<AICoreMemory> Memories = new();
 
@@ -123,9 +140,16 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         string[]? channelLabels = null,
         string ownerName = "", bool isLocked = false, bool isClaimed = false,
         bool lockedView = false,
-        bool showPeople = true, bool showMachines = true, bool showMachinesDetail = false,
-        bool showItems = true, bool showItemsDetail = false,
-        ItemVisionMode itemMode = ItemVisionMode.SearchEngine,
+        bool showPeopleLocal = true, bool showMachinesLocal = true, bool showMachinesDetailLocal = false,
+        bool showItemsLocal = true, bool showItemsDetailLocal = false,
+        ItemVisionMode localItemMode = ItemVisionMode.SearchEngine,
+        bool globalVisionEnabled = false,
+        bool showPeopleGlobal = true, bool showMachinesGlobal = true, bool showMachinesDetailGlobal = false,
+        bool showItemsGlobal = true, bool showItemsDetailGlobal = false,
+        ItemVisionMode globalItemMode = ItemVisionMode.SearchEngine,
+        int tokenLocalVision = 0, int tokenGlobalVision = 0,
+        HashSet<string>? enabledCameraSubnets = null,
+        Dictionary<string, int>? availableCameraSubnets = null,
         float visionRange = 15f,
         int tokenSystem = 0, int tokenPersonLore = 0, int tokenCrewXeno = 0,
         int tokenVision = 0, int tokenHistory = 0, int tokenContext = 0,
@@ -135,6 +159,7 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         int loadCount = 0, string loadTimestampsDisplay = "",
         List<OwnershipRecord>? ownershipHistory = null,
         bool aiLocked = false,
+        HashSet<string>? radioChannels = null,
         List<AICoreMemory>? memories = null,
         string exportYaml = "")
     {
@@ -159,17 +184,28 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         IsLocked = isLocked;
         IsClaimed = isClaimed;
         LockedView = lockedView;
-        ShowPeople = showPeople;
-        ShowMachines = showMachines;
-        ShowMachinesDetail = showMachinesDetail;
-        ShowItems = showItems;
-        ShowItemsDetail = showItemsDetail;
-        ItemMode = itemMode;
+        ShowPeopleLocal = showPeopleLocal;
+        ShowMachinesLocal = showMachinesLocal;
+        ShowMachinesDetailLocal = showMachinesDetailLocal;
+        ShowItemsLocal = showItemsLocal;
+        ShowItemsDetailLocal = showItemsDetailLocal;
+        LocalItemMode = localItemMode;
+        GlobalVisionEnabled = globalVisionEnabled;
+        ShowPeopleGlobal = showPeopleGlobal;
+        ShowMachinesGlobal = showMachinesGlobal;
+        ShowMachinesDetailGlobal = showMachinesDetailGlobal;
+        ShowItemsGlobal = showItemsGlobal;
+        ShowItemsDetailGlobal = showItemsDetailGlobal;
+        GlobalItemMode = globalItemMode;
+        EnabledCameraSubnets = enabledCameraSubnets ?? new();
+        AvailableCameraSubnets = availableCameraSubnets ?? new();
         VisionRange = visionRange;
         TokenSystem = tokenSystem;
         TokenPersonLore = tokenPersonLore;
         TokenCrewXeno = tokenCrewXeno;
         TokenVision = tokenVision;
+        TokenLocalVision = tokenLocalVision;
+        TokenGlobalVision = tokenGlobalVision;
         TokenHistory = tokenHistory;
         TokenContext = tokenContext;
         CooldownBase = cooldownBase;
@@ -185,6 +221,7 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         LoadTimestampsDisplay = loadTimestampsDisplay;
         OwnershipHistory = ownershipHistory ?? new();
         AiLocked = aiLocked;
+        RadioChannels = radioChannels ?? new();
         Memories = memories ?? new();
         ExportYaml = exportYaml;
         RefreshOnly = false;
@@ -213,7 +250,7 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
     public int AutoContinueThreshold;
     public int AutoContinueMax;
     public List<AICoreMemory>? Memories;
-    public ItemVisionMode ItemMode = ItemVisionMode.SearchEngine;
+    public ItemVisionMode LocalItemMode = ItemVisionMode.SearchEngine;
     public string[] ChannelLabels = new string[20];
 
     public CoyoteAIConfigSaveMessage(string aiName, string personalityPrompt, string apiEndpoint,
@@ -222,7 +259,7 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
         float cooldownBase = 0.3f, float cooldownCharFactor = 0.02f, float cooldownMax = 4f,
         bool autoContinue = false, int autoContinueThreshold = 400, int autoContinueMax = 2,
         List<AICoreMemory>? memories = null,
-        ItemVisionMode itemMode = ItemVisionMode.SearchEngine,
+        ItemVisionMode localItemMode = ItemVisionMode.SearchEngine,
         string[]? channelLabels = null)
     {
         AiName = aiName;
@@ -244,7 +281,7 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
         AutoContinueThreshold = autoContinueThreshold;
         AutoContinueMax = autoContinueMax;
         Memories = memories;
-        ItemMode = itemMode;
+        LocalItemMode = localItemMode;
         ChannelLabels = channelLabels ?? new string[20];
     }
 }
@@ -285,6 +322,43 @@ public sealed class CoyoteAISetItemModeMessage : BoundUserInterfaceMessage
     public CoyoteAISetItemModeMessage(ItemVisionMode mode)
     {
         Mode = mode;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CoyoteAISetGlobalVisionOptionMessage : BoundUserInterfaceMessage
+{
+    public string Option;
+    public bool Value;
+
+    public CoyoteAISetGlobalVisionOptionMessage(string option, bool value)
+    {
+        Option = option;
+        Value = value;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CoyoteAISetGlobalItemModeMessage : BoundUserInterfaceMessage
+{
+    public ItemVisionMode Mode;
+
+    public CoyoteAISetGlobalItemModeMessage(ItemVisionMode mode)
+    {
+        Mode = mode;
+    }
+}
+
+[Serializable, NetSerializable]
+public sealed class CoyoteAISetCameraSubnetMessage : BoundUserInterfaceMessage
+{
+    public string SubnetId = string.Empty;
+    public bool Enabled;
+
+    public CoyoteAISetCameraSubnetMessage(string subnetId, bool enabled)
+    {
+        SubnetId = subnetId;
+        Enabled = enabled;
     }
 }
 
@@ -330,6 +404,19 @@ public sealed class CoyoteAIImportMessage : BoundUserInterfaceMessage
 public sealed class CoyoteAISetEnabledMessage : BoundUserInterfaceMessage
 {
     public bool Enabled;
+}
+
+[Serializable, NetSerializable]
+public sealed class CoyoteAISetRadioChannelMessage : BoundUserInterfaceMessage
+{
+    public string ChannelId = string.Empty;
+    public bool Enabled;
+
+    public CoyoteAISetRadioChannelMessage(string channelId, bool enabled)
+    {
+        ChannelId = channelId;
+        Enabled = enabled;
+    }
 }
 
 // Memory CRUD
@@ -421,7 +508,7 @@ public sealed class AICoreMemory
 
 public sealed class AICoreExportData
 {
-    public int Version = 1;
+    public int Version = 2;
     public string ForkId = string.Empty;
     public string CoreId = string.Empty;
     public string AiName = string.Empty;
@@ -433,11 +520,26 @@ public sealed class AICoreExportData
     public bool Enabled = true;
     public int MaxHistoryLength = 200;
     public int MaxTokens = 128000;
+    public bool ShowPeopleLocal = true;
+    public bool ShowMachinesLocal = true;
+    public bool ShowMachinesDetailLocal;
+    public bool ShowItemsLocal = true;
+    public bool ShowItemsDetailLocal;
+    public ItemVisionMode LocalItemMode = ItemVisionMode.SearchEngine;
+    // v1 backward compat (populated from old JSON)
     public bool ShowPeople = true;
     public bool ShowMachines = true;
     public bool ShowMachinesDetail;
     public bool ShowItems = true;
     public bool ShowItemsDetail;
+    public bool GlobalVisionEnabled;
+    public bool ShowPeopleGlobal = true;
+    public bool ShowMachinesGlobal = true;
+    public bool ShowMachinesDetailGlobal;
+    public bool ShowItemsGlobal = true;
+    public bool ShowItemsDetailGlobal;
+    public ItemVisionMode GlobalItemMode = ItemVisionMode.SearchEngine;
+    public List<string> EnabledCameraSubnets = new();
     public float VisionRange = 15f;
     public float CooldownBase = 0.3f;
     public float CooldownCharFactor = 0.02f;
@@ -453,6 +555,7 @@ public sealed class AICoreExportData
     public List<ChatEntry> ConversationHistory = new();
     public List<AICoreMemory> Memories = new();
     public string[] ChannelLabels = new string[20];
+    public string[] RadioChannels = Array.Empty<string>();
 }
 
 // Server→Client event for export response

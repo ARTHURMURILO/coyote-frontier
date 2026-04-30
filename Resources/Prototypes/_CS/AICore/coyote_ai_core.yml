@@ -20,6 +20,11 @@
     - Security
     - Service
     - Supply
+    - Handheld
+    - Binary
+    - Freelance
+    - Traffic
+    - Nfsd
   - type: IntrinsicRadioTransmitter
     channels:
     - Common
@@ -30,6 +35,11 @@
     - Security
     - Service
     - Supply
+    - Handheld
+    - Binary
+    - Freelance
+    - Traffic
+    - Nfsd
   - type: Speech
     speechVerb: Default
   - type: DeviceLinkSource

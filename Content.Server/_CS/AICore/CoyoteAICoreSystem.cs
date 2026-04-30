@@ -11,11 +11,13 @@ using Content.Server.Radio;
 using Content.Server.Radio.Components;
 using Content.Server.Radio.EntitySystems;
 using Content.Server.Station.Systems;
+using Content.Server.SurveillanceCamera;
 using Content.Shared.Access;
 using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.Chat;
 using Content.Shared.Damage;
+using Content.Shared.DeviceNetwork.Components;
 using Content.Shared.Doors.Components;
 using Content.Shared.Doors.Systems;
 using Content.Shared.Eye;
@@ -96,6 +98,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     private readonly Dictionary<string, List<ChatEntry>> _pendingBatches = new();
     private readonly Dictionary<string, int> _autoContinueCounts = new();
     private readonly Dictionary<string, List<SearchResult>> _searchResults = new();
+    private readonly Dictionary<EntityUid, CameraNetworkCache> _cameraCache = new();
     private TimeSpan _lastUiRefresh = TimeSpan.Zero;
     private TimeSpan _lastFullUiRefresh = TimeSpan.Zero;
 
@@ -125,6 +128,10 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIImportMessage>(OnImport);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIAddMemoryMessage>(OnAddMemory);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIRemoveMemoryMessage>(OnRemoveMemory);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetRadioChannelMessage>(OnSetRadioChannel);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetGlobalVisionOptionMessage>(OnSetGlobalVisionOption);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetGlobalItemModeMessage>(OnSetGlobalItemMode);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetCameraSubnetMessage>(OnSetCameraSubnet);
     }
 
     public override void Update(float frameTime)
@@ -185,6 +192,8 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.LoadTimestamps.Add($"Shift {shiftTime} | {realDate}");
         if (ent.Comp.LoadTimestamps.Count > 20)
             ent.Comp.LoadTimestamps.RemoveRange(0, ent.Comp.LoadTimestamps.Count - 20);
+
+        SyncRadioComponents(ent, ent.Comp);
     }
 
     private void OnShutdown(Entity<CoyoteAICoreComponent> ent, ref ComponentShutdown args)
@@ -418,7 +427,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var speciesIds = _manifest.GetSpeciesOnStation();
         var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
         var lawBlock = BuildLawBlock(core.LawSet);
-        var visionBlock = BuildVisionBlock(uid, core);
+        var localVision = BuildLocalVisionBlock(uid, core);
+        var globalVision = BuildGlobalVisionBlock(uid, core);
+        var visionBlock = CombineVision(localVision, globalVision, core);
         var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, timeSinceLast, GetCurrentVesselName((uid, core)), out _);
         var userPrompt = _promptBuilder.BuildUserPrompt(history, entry, shiftDuration, distance);
 
@@ -807,7 +818,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.AutoContinue = args.AutoContinue;
         ent.Comp.AutoContinueThreshold = Math.Max(args.AutoContinueThreshold, 50);
         ent.Comp.AutoContinueMax = Math.Clamp(args.AutoContinueMax, 1, 10);
-        ent.Comp.ItemMode = args.ItemMode;
+        ent.Comp.LocalItemMode = args.LocalItemMode;
         if (args.Memories != null)
             ent.Comp.Memories = args.Memories;
         ent.Comp.ChannelLabels = args.ChannelLabels;
@@ -852,11 +863,11 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     {
         switch (args.Option)
         {
-            case "ShowPeople": ent.Comp.ShowPeople = args.Value; break;
-            case "ShowMachines": ent.Comp.ShowMachines = args.Value; break;
-            case "ShowMachinesDetail": ent.Comp.ShowMachinesDetail = args.Value; break;
-            case "ShowItems": ent.Comp.ShowItems = args.Value; break;
-            case "ShowItemsDetail": ent.Comp.ShowItemsDetail = args.Value; break;
+            case "ShowPeople": ent.Comp.ShowPeopleLocal = args.Value; break;
+            case "ShowMachines": ent.Comp.ShowMachinesLocal = args.Value; break;
+            case "ShowMachinesDetail": ent.Comp.ShowMachinesDetailLocal = args.Value; break;
+            case "ShowItems": ent.Comp.ShowItemsLocal = args.Value; break;
+            case "ShowItemsDetail": ent.Comp.ShowItemsDetailLocal = args.Value; break;
         }
         Dirty(ent);
         UpdateConfigUi(ent, refreshOnly: true);
@@ -864,7 +875,43 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
     private void OnSetItemMode(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetItemModeMessage args)
     {
-        ent.Comp.ItemMode = args.Mode;
+        ent.Comp.LocalItemMode = args.Mode;
+        Dirty(ent);
+        UpdateConfigUi(ent, refreshOnly: true);
+    }
+
+    private void OnSetGlobalVisionOption(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetGlobalVisionOptionMessage args)
+    {
+        switch (args.Option)
+        {
+            case "GlobalVisionEnabled": ent.Comp.GlobalVisionEnabled = args.Value; break;
+            case "ShowPeopleGlobal": ent.Comp.ShowPeopleGlobal = args.Value; break;
+            case "ShowMachinesGlobal": ent.Comp.ShowMachinesGlobal = args.Value; break;
+            case "ShowMachinesDetailGlobal": ent.Comp.ShowMachinesDetailGlobal = args.Value; break;
+            case "ShowItemsGlobal": ent.Comp.ShowItemsGlobal = args.Value; break;
+            case "ShowItemsDetailGlobal": ent.Comp.ShowItemsDetailGlobal = args.Value; break;
+        }
+        Dirty(ent);
+        UpdateConfigUi(ent, refreshOnly: true);
+    }
+
+    private void OnSetGlobalItemMode(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetGlobalItemModeMessage args)
+    {
+        ent.Comp.GlobalItemMode = args.Mode;
+        Dirty(ent);
+        UpdateConfigUi(ent, refreshOnly: true);
+    }
+
+    private void OnSetCameraSubnet(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetCameraSubnetMessage args)
+    {
+        if (args.Enabled)
+        {
+            if (!ent.Comp.EnabledCameraSubnets.Contains(args.SubnetId))
+                ent.Comp.EnabledCameraSubnets.Add(args.SubnetId);
+        }
+        else
+            ent.Comp.EnabledCameraSubnets.Remove(args.SubnetId);
+
         Dirty(ent);
         UpdateConfigUi(ent, refreshOnly: true);
     }
@@ -883,6 +930,26 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             ent.Comp.ChannelLabels[args.ChannelIndex] = args.Label;
             Dirty(ent);
         }
+    }
+
+    private void SyncRadioComponents(EntityUid uid, CoyoteAICoreComponent core)
+    {
+        if (TryComp<ActiveRadioComponent>(uid, out var radio))
+            radio.Channels = new HashSet<string>(core.RadioChannels);
+        if (TryComp<IntrinsicRadioTransmitterComponent>(uid, out var transmitter))
+            transmitter.Channels = new HashSet<string>(core.RadioChannels);
+    }
+
+    private void OnSetRadioChannel(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetRadioChannelMessage args)
+    {
+        if (args.Enabled)
+            ent.Comp.RadioChannels.Add(args.ChannelId);
+        else
+            ent.Comp.RadioChannels.Remove(args.ChannelId);
+
+        SyncRadioComponents(ent, ent.Comp);
+        Dirty(ent);
+        UpdateConfigUi(ent, refreshOnly: true);
     }
 
     private void RevertExpiredPulses()
@@ -938,12 +1005,14 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                 var speciesIds = _manifest.GetSpeciesOnStation();
                 var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
                 var lawBlock = BuildLawBlock(core.LawSet);
-                var visionBlock = BuildVisionBlock(uid, core);
+                var localVision = BuildLocalVisionBlock(uid, core);
+                var globalVision = BuildGlobalVisionBlock(uid, core);
+                var mergedVision = CombineVision(localVision, globalVision, core);
                 var history = _histories.TryGetValue(coreId, out var h) ? h : new Queue<ChatEntry>();
                 var userPrompt = batch.Count == 1
                     ? _promptBuilder.BuildUserPrompt(history, batch[0], shiftDuration, null)
                     : _promptBuilder.BuildBatchPrompt(history, batch, shiftDuration);
-                var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, GetTimeSinceLastResponse(coreId), GetCurrentVesselName((uid, core)), out _);
+                var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, mergedVision, shiftDuration, GetTimeSinceLastResponse(coreId), GetCurrentVesselName((uid, core)), out _);
 
                 _busyCores.Add(coreId);
                 _pendingRequests.Enqueue(new PendingRequest
@@ -1169,8 +1238,13 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var speciesIds = _manifest.GetSpeciesOnStation();
         var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
         var lawBlock = BuildLawBlock(ent.Comp.LawSet);
-        var visionBlock = BuildVisionBlock(ent.Owner, ent.Comp);
-        var systemPrompt = _promptBuilder.BuildSystemPrompt(ent.Comp, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, "N/A", GetCurrentVesselName(ent), out var counts);
+        var localVision = BuildLocalVisionBlock(ent.Owner, ent.Comp);
+        var globalVision = BuildGlobalVisionBlock(ent.Owner, ent.Comp);
+        var localVisionChars = localVision.Length;
+        var globalVisionStr = globalVision ?? string.Empty;
+        var globalVisionChars = ent.Comp.GlobalVisionEnabled ? globalVisionStr.Length : 0;
+        var mergedVision = CombineVision(localVision, globalVisionStr, ent.Comp);
+        var systemPrompt = _promptBuilder.BuildSystemPrompt(ent.Comp, manifest, speciesLoreBlock, lawBlock, mergedVision, shiftDuration, "N/A", GetCurrentVesselName(ent), out var counts);
         var totalEstimatedTokens = (systemPrompt.Length + totalChars) / 4;
 
         var state = new CoyoteAIConfigBuiState(
@@ -1195,17 +1269,28 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             isLocked: ent.Comp.IsLocked,
             isClaimed: ent.Comp.IsClaimed,
             lockedView: (ent.Comp.IsLocked && ent.Comp.IsClaimed) || ent.Comp.AiLocked,
-            showPeople: ent.Comp.ShowPeople,
-            showMachines: ent.Comp.ShowMachines,
-            showMachinesDetail: ent.Comp.ShowMachinesDetail,
-            showItems: ent.Comp.ShowItems,
-            showItemsDetail: ent.Comp.ShowItemsDetail,
-            itemMode: ent.Comp.ItemMode,
+            showPeopleLocal: ent.Comp.ShowPeopleLocal,
+            showMachinesLocal: ent.Comp.ShowMachinesLocal,
+            showMachinesDetailLocal: ent.Comp.ShowMachinesDetailLocal,
+            showItemsLocal: ent.Comp.ShowItemsLocal,
+            showItemsDetailLocal: ent.Comp.ShowItemsDetailLocal,
+            localItemMode: ent.Comp.LocalItemMode,
+            globalVisionEnabled: ent.Comp.GlobalVisionEnabled,
+            showPeopleGlobal: ent.Comp.ShowPeopleGlobal,
+            showMachinesGlobal: ent.Comp.ShowMachinesGlobal,
+            showMachinesDetailGlobal: ent.Comp.ShowMachinesDetailGlobal,
+            showItemsGlobal: ent.Comp.ShowItemsGlobal,
+            showItemsDetailGlobal: ent.Comp.ShowItemsDetailGlobal,
+            globalItemMode: ent.Comp.GlobalItemMode,
+            enabledCameraSubnets: ent.Comp.EnabledCameraSubnets.ToHashSet(),
+            availableCameraSubnets: RefreshCameraNetwork(ent.Owner).AvailableSubnets,
             visionRange: ent.Comp.VisionRange,
             tokenSystem: counts.System / 4,
             tokenPersonLore: counts.PersonLore / 4,
             tokenCrewXeno: counts.CrewXeno / 4,
             tokenVision: counts.Vision / 4,
+            tokenLocalVision: localVisionChars / 4,
+            tokenGlobalVision: globalVisionChars / 4,
             tokenHistory: totalChars / 4,
             tokenContext: 0,
             cooldownBase: ent.Comp.CooldownBase,
@@ -1222,6 +1307,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                 ? string.Join(", ", ent.Comp.LoadTimestamps.TakeLast(5)) : "",
             ownershipHistory: ent.Comp.OwnershipHistory,
             aiLocked: ent.Comp.AiLocked,
+            radioChannels: ent.Comp.RadioChannels,
             memories: ent.Comp.Memories
         );
         state.RefreshOnly = refreshOnly;
@@ -1273,7 +1359,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     ///     Duplicate machines/items are aggregated with "×N" notation and comma-separated distances.
     ///     Direction [N/NE/E/SE/S/SW/W/NW] is only shown for unique entities (count == 1).
     /// </summary>
-    private string BuildVisionBlock(EntityUid coreUid, CoyoteAICoreComponent core)
+    private string BuildLocalVisionBlock(EntityUid coreUid, CoyoteAICoreComponent core)
     {
         if (!TryComp<TransformComponent>(coreUid, out var coreXform))
             return string.Empty;
@@ -1287,7 +1373,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var machineEntries = new List<string>();
         var itemEntries = new List<string>();
 
-        if (core.ShowPeople)
+        if (core.ShowPeopleLocal)
         {
             var query = EntityQueryEnumerator<MobStateComponent, TransformComponent, MetaDataComponent>();
             while (query.MoveNext(out var uid, out var mobState, out var xform, out var meta))
@@ -1374,7 +1460,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                     bioParts.Add(genderStr);
                 if (age != 30)
                     bioParts.Add($"{age}yo");
-                bioParts.Add($"at {dist:F0}m");
+                bioParts.Add($"at {dist:F0}m ({(int)pos.X}, {(int)pos.Y})");
                 if (bioParts.Count > 0)
                     info += $" | {string.Join(", ", bioParts)}";
                 if (heightCm > 0)
@@ -1472,7 +1558,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             }
         }
 
-        if (core.ShowMachines)
+        if (core.ShowMachinesLocal)
         {
             var machineData = new Dictionary<string, (int count, List<float> dists, Vector2 firstPos, string desc, bool powered)>();
 
@@ -1511,9 +1597,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             {
                 var sortedDists = dists.Distinct().OrderBy(d => d).ToList();
                 var distStr = string.Join(", ", sortedDists.Select(d => $"{d:F0}m"));
-                var line = $"[MACHINE] {name} | at {distStr}";
+                var line = $"[MACHINE] {name} | at {distStr} ({(int)firstPos.X}, {(int)firstPos.Y})";
 
-                if (core.ShowMachinesDetail)
+                if (core.ShowMachinesDetailLocal)
                 {
                     if (count == 1)
                     {
@@ -1531,9 +1617,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             }
         }
 
-        if (core.ShowItems)
+        if (core.ShowItemsLocal)
         {
-            if (core.ItemMode == ItemVisionMode.FeedAll)
+            if (core.LocalItemMode == ItemVisionMode.FeedAll)
             {
                 // Feed All mode: full details for every item (current behavior)
                 var itemData = new Dictionary<string, (int count, List<float> dists, Vector2 firstPos, string desc, int contraband, int stackAmount)>();
@@ -1567,7 +1653,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                     var sortedDists = dists.Distinct().OrderBy(d => d).ToList();
                     var distStr = string.Join(", ", sortedDists.Select(d => $"{d:F0}m"));
                     var countStr = count > 1 ? $" ×{count}" : "";
-                    if (core.ShowItemsDetail)
+                    if (core.ShowItemsDetailLocal)
                     {
                         var itemDetails = new List<string>();
                         var header = $"[ITEM] {name}{countStr} | at {distStr}";
@@ -1582,7 +1668,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                         itemEntries.Add($"[ITEM] {name}{countStr} | at {distStr}");
                 }
             }
-            else if (core.ItemMode == ItemVisionMode.SmartSummary)
+            else if (core.LocalItemMode == ItemVisionMode.SmartSummary)
             {
                 // Smart Summary: compact counts
                 var itemCount = 0;
@@ -1616,6 +1702,19 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         }
 
         // Combine sections
+        var totalMachines = machineEntries.Count;
+        var totalItems = itemEntries.Count;
+        var visionCount = totalMachines + totalItems;
+
+        var visionSummary = "";
+        if (visionCount > 0)
+        {
+            var parts = new List<string>();
+            if (totalMachines > 0) parts.Add($"{totalMachines} machines");
+            if (totalItems > 0) parts.Add($"{totalItems} items");
+            visionSummary = $"There's: {visionCount} object{(visionCount != 1 ? "s" : "")} inside your vision: {string.Join(", ", parts)}.\n\n";
+        }
+
         var sections = new List<string>();
         if (mobEntries.Count > 0)
             sections.Add("── CREW/MOBS ──\n" + string.Join("\n---\n", mobEntries));
@@ -1624,13 +1723,43 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         if (itemEntries.Count > 0)
             sections.Add(string.Join("\n", itemEntries));
         if (sections.Count == 0) return string.Empty;
-        return "── NEARBY ──\n" + string.Join("\n\n", sections) + "\n";
+        return "── LOCAL ──\n" + visionSummary + string.Join("\n\n", sections) + "\n";
+    }
+
+    private static bool FuzzyNameMatch(string entityName, string searchTerm)
+    {
+        if (string.IsNullOrEmpty(entityName) || string.IsNullOrEmpty(searchTerm))
+            return false;
+        var name = entityName.ToLowerInvariant().Trim();
+        var term = searchTerm.ToLowerInvariant().Trim();
+        if (name.Contains(term))
+            return true;
+        var distance = LevenshteinDistance(name, term);
+        return distance <= Math.Max(2, term.Length * 0.3);
+    }
+
+    private static int LevenshteinDistance(string a, string b)
+    {
+        var lenA = a.Length;
+        var lenB = b.Length;
+        var matrix = new int[lenA + 1, lenB + 1];
+        for (int i = 0; i <= lenA; i++) matrix[i, 0] = i;
+        for (int j = 0; j <= lenB; j++) matrix[0, j] = j;
+        for (int i = 1; i <= lenA; i++)
+            for (int j = 1; j <= lenB; j++)
+            {
+                var cost = a[i - 1] == b[j - 1] ? 0 : 1;
+                matrix[i, j] = Math.Min(
+                    Math.Min(matrix[i - 1, j] + 1, matrix[i, j - 1] + 1),
+                    matrix[i - 1, j - 1] + cost);
+            }
+        return matrix[lenA, lenB];
     }
 
     private static string GetDirection(Vector2 from, Vector2 to)
     {
         var diff = to - from;
-        var angle = Math.Atan2(diff.Y, diff.X) * (180.0 / Math.PI);
+        var angle = Math.Atan2(-diff.Y, diff.X) * (180.0 / Math.PI);
         if (angle < 0) angle += 360;
         return angle switch
         {
@@ -1817,7 +1946,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         {
             if (uid == coreUid) continue;
             if (string.IsNullOrEmpty(meta.EntityName)) continue;
-            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase))
+            if (!FuzzyNameMatch(meta.EntityName, targetName))
                 continue;
             if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0)
                 continue;
@@ -1850,7 +1979,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var history = _histories.TryGetValue(ent.Comp.CoreId, out var h) ? h.ToList() : new();
         var export = new AICoreExportData
         {
-            Version = 1,
+            Version = 2,
             CoreId = ent.Comp.CoreId,
             AiName = ent.Comp.AiName,
             PersonalityPrompt = ent.Comp.PersonalityPrompt,
@@ -1861,11 +1990,20 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             Enabled = ent.Comp.Enabled,
             MaxHistoryLength = ent.Comp.MaxHistoryLength,
             MaxTokens = ent.Comp.MaxTokens,
-            ShowPeople = ent.Comp.ShowPeople,
-            ShowMachines = ent.Comp.ShowMachines,
-            ShowMachinesDetail = ent.Comp.ShowMachinesDetail,
-            ShowItems = ent.Comp.ShowItems,
-            ShowItemsDetail = ent.Comp.ShowItemsDetail,
+            ShowPeopleLocal = ent.Comp.ShowPeopleLocal,
+            ShowMachinesLocal = ent.Comp.ShowMachinesLocal,
+            ShowMachinesDetailLocal = ent.Comp.ShowMachinesDetailLocal,
+            ShowItemsLocal = ent.Comp.ShowItemsLocal,
+            ShowItemsDetailLocal = ent.Comp.ShowItemsDetailLocal,
+            LocalItemMode = ent.Comp.LocalItemMode,
+            GlobalVisionEnabled = ent.Comp.GlobalVisionEnabled,
+            ShowPeopleGlobal = ent.Comp.ShowPeopleGlobal,
+            ShowMachinesGlobal = ent.Comp.ShowMachinesGlobal,
+            ShowMachinesDetailGlobal = ent.Comp.ShowMachinesDetailGlobal,
+            ShowItemsGlobal = ent.Comp.ShowItemsGlobal,
+            ShowItemsDetailGlobal = ent.Comp.ShowItemsDetailGlobal,
+            GlobalItemMode = ent.Comp.GlobalItemMode,
+            EnabledCameraSubnets = new(ent.Comp.EnabledCameraSubnets),
             VisionRange = ent.Comp.VisionRange,
             CooldownBase = ent.Comp.CooldownBase,
             CooldownCharFactor = ent.Comp.CooldownCharFactor,
@@ -1881,6 +2019,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             ConversationHistory = history,
             Memories = new(ent.Comp.Memories),
             ChannelLabels = ent.Comp.ChannelLabels.ToArray(),
+            RadioChannels = ent.Comp.RadioChannels.ToArray(),
         };
         var json = System.Text.Json.JsonSerializer.Serialize(export, new System.Text.Json.JsonSerializerOptions { WriteIndented = true, IncludeFields = true });
         RaiseNetworkEvent(new CoyoteAIExportResponseEvent { Yaml = json }, args.Actor);
@@ -1904,11 +2043,6 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.Enabled = data.Enabled;
         ent.Comp.MaxHistoryLength = Math.Clamp(data.MaxHistoryLength, 5, 1000);
         ent.Comp.MaxTokens = Math.Max(data.MaxTokens, 1);
-        ent.Comp.ShowPeople = data.ShowPeople;
-        ent.Comp.ShowMachines = data.ShowMachines;
-        ent.Comp.ShowMachinesDetail = data.ShowMachinesDetail;
-        ent.Comp.ShowItems = data.ShowItems;
-        ent.Comp.ShowItemsDetail = data.ShowItemsDetail;
         ent.Comp.VisionRange = Math.Clamp(data.VisionRange, 1f, 15f);
         ent.Comp.CooldownBase = Math.Clamp(data.CooldownBase, 0.1f, 10f);
         ent.Comp.CooldownCharFactor = Math.Clamp(data.CooldownCharFactor, 0.001f, 0.5f);
@@ -1923,6 +2057,38 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.OwnershipHistory = new(data.OwnershipHistory);
         ent.Comp.Memories = new(data.Memories);
         ent.Comp.ChannelLabels = data.ChannelLabels ?? new string[20];
+        if (data.RadioChannels != null && data.RadioChannels.Length > 0)
+        {
+            ent.Comp.RadioChannels = new HashSet<string>(data.RadioChannels);
+            SyncRadioComponents(ent, ent.Comp);
+        }
+
+        // Vision fields: v2 uses dedicated fields, v1 maps old names
+        if (data.Version >= 2)
+        {
+            ent.Comp.ShowPeopleLocal = data.ShowPeopleLocal;
+            ent.Comp.ShowMachinesLocal = data.ShowMachinesLocal;
+            ent.Comp.ShowMachinesDetailLocal = data.ShowMachinesDetailLocal;
+            ent.Comp.ShowItemsLocal = data.ShowItemsLocal;
+            ent.Comp.ShowItemsDetailLocal = data.ShowItemsDetailLocal;
+            ent.Comp.LocalItemMode = data.LocalItemMode;
+            ent.Comp.GlobalVisionEnabled = data.GlobalVisionEnabled;
+            ent.Comp.ShowPeopleGlobal = data.ShowPeopleGlobal;
+            ent.Comp.ShowMachinesGlobal = data.ShowMachinesGlobal;
+            ent.Comp.ShowMachinesDetailGlobal = data.ShowMachinesDetailGlobal;
+            ent.Comp.ShowItemsGlobal = data.ShowItemsGlobal;
+            ent.Comp.ShowItemsDetailGlobal = data.ShowItemsDetailGlobal;
+            ent.Comp.GlobalItemMode = data.GlobalItemMode;
+            ent.Comp.EnabledCameraSubnets = new(data.EnabledCameraSubnets);
+        }
+        else
+        {
+            ent.Comp.ShowPeopleLocal = data.ShowPeople;
+            ent.Comp.ShowMachinesLocal = data.ShowMachines;
+            ent.Comp.ShowMachinesDetailLocal = data.ShowMachinesDetail;
+            ent.Comp.ShowItemsLocal = data.ShowItems;
+            ent.Comp.ShowItemsDetailLocal = data.ShowItemsDetail;
+        }
 
         _histories[ent.Comp.CoreId] = new Queue<ChatEntry>(data.ConversationHistory);
 
@@ -1967,22 +2133,24 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var handled = false;
         string? injectMessage = null;
 
-        // query_entity — Smart Summary mode: get full details of one entity
-        if (!string.IsNullOrEmpty(resp.QueryEntity) && core.ItemMode == ItemVisionMode.SmartSummary)
+        // query_entity — get full details of a named entity
+        if (!string.IsNullOrEmpty(resp.QueryEntity))
         {
             var detail = BuildEntityDetailBlock(response.CoreUid, resp.QueryEntity, core);
             injectMessage = $"── QUERY: {resp.QueryEntity} ──\n{detail}";
             handled = true;
         }
 
-        // search_entity — Search Engine mode: search by name
-        if (!string.IsNullOrEmpty(resp.SearchEntity) && core.ItemMode == ItemVisionMode.SearchEngine)
+        // search_entity — search by name across local + camera scopes
+        if (!string.IsNullOrEmpty(resp.SearchEntity))
         {
             var results = SearchEntities(response.CoreUid, resp.SearchEntity, core);
             if (results.Count == 1)
             {
-                var detail = BuildEntityDetailBlock(response.CoreUid, results[0].DisplayName, core);
-                injectMessage = $"── SEARCH: {resp.SearchEntity} ──\n{detail}";
+                var r = results[0];
+                var tag = r.CameraName != null ? $"[CAMERA: {r.CameraName}]" : "[LOCAL]";
+                var detail = BuildEntityDetailBlock(response.CoreUid, r.DisplayName, core);
+                injectMessage = $"── SEARCH: {resp.SearchEntity} ──\n{tag} {detail}";
                 _searchResults.Remove(response.CoreId);
             }
             else
@@ -1993,8 +2161,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                 for (int i = 0; i < results.Count; i++)
                 {
                     var r = results[i];
+                    var tag = r.CameraName != null ? $"[CAMERA: {r.CameraName}]" : "[LOCAL]";
                     var dir = GetDirection(Transform(response.CoreUid).WorldPosition, r.Position);
-                    sb.AppendLine($"  [S{i}] {r.DisplayName} | at {(r.Position - Transform(response.CoreUid).WorldPosition).Length():F0}m [{dir}] | ({(int)r.Position.X}, {(int)r.Position.Y})");
+                    sb.AppendLine($"  [S{i}] {tag} {r.DisplayName} | at {(r.Position - Transform(response.CoreUid).WorldPosition).Length():F0}m [{dir}] | ({(int)r.Position.X}, {(int)r.Position.Y})");
                 }
                 sb.AppendLine($"Select one with {{\"select_entity\": \"S0\"}}");
                 _searchResults[response.CoreId] = results;
@@ -2003,8 +2172,8 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             handled = true;
         }
 
-        // select_entity — Search Engine mode: pick from search results
-        if (!string.IsNullOrEmpty(resp.SelectEntity) && core.ItemMode == ItemVisionMode.SearchEngine)
+        // select_entity — pick from search results
+        if (!string.IsNullOrEmpty(resp.SelectEntity))
         {
             if (_searchResults.TryGetValue(response.CoreId, out var results))
             {
@@ -2012,8 +2181,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                 if (resp.SelectEntity.StartsWith(prefix) && int.TryParse(resp.SelectEntity.AsSpan(1), out var idx) && idx >= 0 && idx < results.Count)
                 {
                     var selected = results[idx];
+                    var tag = selected.CameraName != null ? $"[CAMERA: {selected.CameraName}]" : "[LOCAL]";
                     var detail = BuildEntityDetailBlock(response.CoreUid, selected.DisplayName, core);
-                    injectMessage = $"── SELECTED: {selected.DisplayName} ──\n{detail}";
+                    injectMessage = $"── SELECTED: {selected.DisplayName} ──\n{tag} {detail}";
                 }
                 _searchResults.Remove(response.CoreId);
             }
@@ -2046,8 +2216,10 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var speciesIds = _manifest.GetSpeciesOnStation();
         var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
         var lawBlock = BuildLawBlock(core.LawSet);
-        var visionBlock = BuildVisionBlock(response.CoreUid, core);
-        var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, GetTimeSinceLastResponse(response.CoreId), GetCurrentVesselName((response.CoreUid, core)), out _);
+        var localVision = BuildLocalVisionBlock(response.CoreUid, core);
+        var globalVision = BuildGlobalVisionBlock(response.CoreUid, core);
+        var mergedVision = CombineVision(localVision, globalVision, core);
+        var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, mergedVision, shiftDuration, GetTimeSinceLastResponse(response.CoreId), GetCurrentVesselName((response.CoreUid, core)), out _);
         var followupHistory = _histories.TryGetValue(response.CoreId, out var h) ? new Queue<ChatEntry>(h) : new Queue<ChatEntry>();
         var followupTrigger = new ChatEntry
         {
@@ -2086,7 +2258,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var mobQuery = EntityQueryEnumerator<MobStateComponent, TransformComponent, MetaDataComponent>();
         while (mobQuery.MoveNext(out var uid, out var mobState, out var xform, out var meta))
         {
-            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!FuzzyNameMatch(meta.EntityName, targetName)) continue;
             if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0) continue;
             var pos = xform.WorldPosition;
             var dist = (pos - corePos).Length();
@@ -2109,7 +2281,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var machineQuery = EntityQueryEnumerator<ActivatableUIComponent, TransformComponent, MetaDataComponent>();
         while (machineQuery.MoveNext(out var uid, out var ui, out var xform, out var meta))
         {
-            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!FuzzyNameMatch(meta.EntityName, targetName)) continue;
             if (HasComp<MobStateComponent>(uid) || HasComp<ItemComponent>(uid)) continue;
             if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0) continue;
             var pos = xform.WorldPosition;
@@ -2127,7 +2299,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var itemQuery = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
         while (itemQuery.MoveNext(out var uid, out var item, out var xform, out var meta))
         {
-            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase)) continue;
+            if (!FuzzyNameMatch(meta.EntityName, targetName)) continue;
             if (string.IsNullOrEmpty(meta.EntityName) || IsOrganItem(meta.EntityName)) continue;
             if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0) continue;
             var pos = xform.WorldPosition;
@@ -2149,25 +2321,584 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     private List<SearchResult> SearchEntities(EntityUid coreUid, string searchTerm, CoyoteAICoreComponent core)
     {
         var results = new List<SearchResult>();
-        var corePos = Transform(coreUid).WorldPosition;
-        var range = core.VisionRange;
+        var seen = new HashSet<EntityUid>();
+        var coreVisMask = (int)VisibilityFlags.Normal;
+        if (TryComp<EyeComponent>(coreUid, out var eye))
+            coreVisMask = eye.VisibilityMask;
 
-        var query = EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
-        while (query.MoveNext(out var uid, out var meta, out var xform))
+        // Local search: range + occlusion from core position
+        if (TryComp<TransformComponent>(coreUid, out var coreXform))
         {
-            if (uid == coreUid) continue;
-            if (string.IsNullOrEmpty(meta.EntityName)) continue;
-            if (!meta.EntityName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) continue;
+            var corePos = _xforms.GetWorldPosition(coreXform);
+            var range = core.VisionRange;
+            var query = EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
+            while (query.MoveNext(out var uid, out var meta, out var xform))
+            {
+                if (uid == coreUid) continue;
+                if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                if (!FuzzyNameMatch(meta.EntityName, searchTerm)) continue;
+                if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0) continue;
+                var pos = _xforms.GetWorldPosition(xform);
+                var dist = (pos - corePos).Length();
+                if (dist > range) continue;
+                if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
 
-            var pos = xform.WorldPosition;
-            var dist = (pos - corePos).Length();
-            if (dist > range) continue;
-            if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
+                if (!seen.Add(uid)) continue;
+                results.Add(new SearchResult { Entity = uid, DisplayName = meta.EntityName, Position = pos });
+            }
+        }
 
-            results.Add(new SearchResult { Entity = uid, DisplayName = meta.EntityName, Position = pos });
+        // Global camera search: range from each camera, no occlusion
+        if (core.GlobalVisionEnabled)
+        {
+            var cache = RefreshCameraNetwork(coreUid);
+            foreach (var cam in cache.Cameras)
+            {
+                if (!core.EnabledCameraSubnets.Contains(cam.SubnetId)) continue;
+                var camRange = core.VisionRange;
+                var camPos = cam.Position;
+                var query = EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
+                while (query.MoveNext(out var uid, out var meta, out var xform))
+                {
+                    if (uid == coreUid) continue;
+                    if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                    if (!FuzzyNameMatch(meta.EntityName, searchTerm)) continue;
+                    var pos = _xforms.GetWorldPosition(xform);
+                    var dist = (pos - camPos).Length();
+                    if (dist > camRange) continue;
+
+                    if (!seen.Add(uid)) continue;
+                    results.Add(new SearchResult { Entity = uid, DisplayName = meta.EntityName, Position = pos, CameraName = cam.Name });
+                }
+            }
         }
 
         return results;
+    }
+
+    private string CombineVision(string localVision, string globalVision, CoyoteAICoreComponent core)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrEmpty(localVision))
+            parts.Add(localVision);
+        if (core.GlobalVisionEnabled && !string.IsNullOrEmpty(globalVision))
+            parts.Add(globalVision);
+        return string.Join("\n", parts);
+    }
+
+    private CameraNetworkCache RefreshCameraNetwork(EntityUid coreUid)
+    {
+        if (_cameraCache.TryGetValue(coreUid, out var cache) &&
+            _timing.CurTime - cache.LastRefreshed < TimeSpan.FromSeconds(30))
+            return cache;
+
+        cache = new CameraNetworkCache();
+
+        if (!TryComp<TransformComponent>(coreUid, out var coreXform) || coreXform.GridUid == null)
+        {
+            cache.LastRefreshed = _timing.CurTime;
+            _cameraCache[coreUid] = cache;
+            return cache;
+        }
+
+        var gridUid = coreXform.GridUid.Value;
+        var routers = new Dictionary<string, (string subnetName, uint frequency)>();
+
+        var routerQuery = EntityQueryEnumerator<SurveillanceCameraRouterComponent, TransformComponent>();
+        while (routerQuery.MoveNext(out var uid, out var router, out var xform))
+        {
+            if (xform.GridUid != gridUid) continue;
+            if (!router.Active) continue;
+            if (string.IsNullOrEmpty(router.SubnetFrequencyId)) continue;
+            var name = router.SubnetName;
+            if (string.IsNullOrEmpty(name))
+                name = MakeSubnetNameReadable(router.SubnetFrequencyId);
+            routers[router.SubnetFrequencyId] = (name, router.SubnetFrequency);
+        }
+
+        var subnetCameraCount = new Dictionary<string, int>();
+        foreach (var subnetId in routers.Keys)
+            subnetCameraCount[subnetId] = 0;
+
+        var seenNames = new Dictionary<string, int>();
+        var cameraList = new List<CameraEntry>();
+        var cameraQuery = EntityQueryEnumerator<SurveillanceCameraComponent, TransformComponent, MetaDataComponent>();
+        while (cameraQuery.MoveNext(out var uid, out var cam, out var xform, out var meta))
+        {
+            if (xform.GridUid != gridUid) continue;
+            if (!cam.Active) continue;
+            if (!TryComp<DeviceNetworkComponent>(uid, out var devNet)) continue;
+            var freqId = devNet.ReceiveFrequencyId;
+            if (string.IsNullOrEmpty(freqId) || !subnetCameraCount.ContainsKey(freqId)) continue;
+
+            subnetCameraCount[freqId]++;
+
+            var rawName = cam.NameSet && !string.IsNullOrEmpty(cam.CameraId)
+                ? cam.CameraId
+                : meta.EntityName;
+            var pos = _xforms.GetWorldPosition(xform);
+
+            if (!cam.NameSet || rawName == "camera")
+            {
+                rawName = $"camera ({(int)pos.X}, {(int)pos.Y})";
+            }
+            else
+            {
+                if (!seenNames.TryGetValue(rawName, out var count))
+                    seenNames[rawName] = 1;
+                else
+                {
+                    seenNames[rawName] = ++count;
+                    rawName = $"{rawName} #{count}";
+                }
+            }
+
+            cameraList.Add(new CameraEntry
+            {
+                Entity = uid,
+                Name = rawName,
+                SubnetId = freqId,
+                SubnetName = routers.TryGetValue(freqId, out var r) ? r.subnetName : freqId,
+                Position = pos
+            });
+        }
+
+        cache.AvailableSubnets = subnetCameraCount;
+        cache.Cameras = cameraList;
+        cache.LastRefreshed = _timing.CurTime;
+        _cameraCache[coreUid] = cache;
+        return cache;
+    }
+
+    private string BuildGlobalVisionBlock(EntityUid coreUid, CoyoteAICoreComponent core)
+    {
+        if (!core.GlobalVisionEnabled || core.EnabledCameraSubnets.Count == 0)
+            return string.Empty;
+
+        var cache = RefreshCameraNetwork(coreUid);
+        if (cache.Cameras.Count == 0)
+            return string.Empty;
+
+        var relevantCameras = cache.Cameras
+            .Where(c => core.EnabledCameraSubnets.Contains(c.SubnetId))
+            .ToList();
+
+        if (relevantCameras.Count == 0)
+            return string.Empty;
+
+        var subnetCount = relevantCameras.Select(c => c.SubnetId).Distinct().Count();
+        var modeLabel = core.GlobalItemMode switch
+        {
+            ItemVisionMode.SearchEngine => "Search Engine",
+            ItemVisionMode.SmartSummary => "Smart Summary",
+            _ => "Full Feed"
+        };
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"── GLOBAL VISION (CAMERAS) ({modeLabel}) ──");
+        sb.AppendLine($"{{{relevantCameras.Count} cameras across {subnetCount} subnets}}");
+        sb.AppendLine();
+
+        var camRange = core.VisionRange;
+
+        foreach (var subnetGroup in relevantCameras.GroupBy(c => c.SubnetName))
+        {
+            sb.AppendLine($"[SUBNET: {subnetGroup.Key}]");
+            var camNum = 0;
+            foreach (var cam in subnetGroup)
+            {
+                camNum++;
+                var camPos = cam.Position;
+
+                if (core.GlobalItemMode == ItemVisionMode.FeedAll)
+                {
+                    var camEntry = BuildLocalVisionBlockFromPosition(cam.Entity, camPos, core,
+                        core.ShowPeopleGlobal, core.ShowMachinesGlobal, core.ShowMachinesDetailGlobal,
+                        core.ShowItemsGlobal, core.ShowItemsDetailGlobal, core.GlobalItemMode, camRange);
+                    if (!string.IsNullOrEmpty(camEntry))
+                    {
+                        sb.AppendLine($"  Camera #{camNum} '{cam.Name}' ({(int)camPos.X}, {(int)camPos.Y}):");
+                        foreach (var line in camEntry.Split('\n'))
+                            sb.AppendLine($"    {line}");
+                        sb.AppendLine();
+                    }
+                    else
+                    {
+                        sb.AppendLine($"  Camera #{camNum} '{cam.Name}' ({(int)camPos.X}, {(int)camPos.Y}): nothing visible");
+                        sb.AppendLine();
+                    }
+                    continue;
+                }
+
+                // Build mob details and counts
+                var mobLines = new List<string>();
+                var crewCount = 0;
+                var mobCount = 0;
+                if (core.ShowPeopleGlobal)
+                {
+                    var mobQuery = EntityQueryEnumerator<MobStateComponent, TransformComponent, MetaDataComponent>();
+                    while (mobQuery.MoveNext(out var uid, out var mState, out var tx, out var meta))
+                    {
+                        if (uid == coreUid) continue;
+                        if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                        if (IsOrganItem(meta.EntityName)) continue;
+                        var pos = _xforms.GetWorldPosition(tx);
+                        if ((pos - camPos).Length() > camRange) continue;
+
+                        var isHumanoid = HasComp<HumanoidAppearanceComponent>(uid);
+                        var hasMind = _mind.TryGetMind(uid, out _, out _);
+                        var isCrew = isHumanoid && hasMind;
+                        var tag = isCrew ? "CREW" : "MOB";
+
+                        if (isCrew) crewCount++;
+                        else mobCount++;
+
+                        var dist = (pos - camPos).Length();
+                        var mobParts = new List<string>();
+                        var mobStr = $"[{tag}] {meta.EntityName}";
+
+                        if (isHumanoid)
+                        {
+                            var species = "";
+                            var heightCm = 0f;
+                            var weightKg = 0f;
+                            var markings = new List<string>();
+                            if (TryComp<HumanoidAppearanceComponent>(uid, out var humanoid))
+                            {
+                                species = humanoid.Species;
+                                if (_prototype.TryIndex<SpeciesPrototype>(humanoid.Species, out var speciesProto))
+                                    heightCm = speciesProto.AverageHeight * humanoid.Height;
+                                if (TryComp<PhysicsComponent>(uid, out var phys))
+                                    weightKg = phys.Mass;
+                                foreach (var (category, markingList) in humanoid.MarkingSet.Markings)
+                                {
+                                    foreach (var m in markingList)
+                                    {
+                                        if (m.MarkingId.StartsWith("Undergarment"))
+                                            continue;
+                                        markings.Add(ReadableMarkingName(m.MarkingId));
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(species))
+                                mobParts.Add(species);
+                            if (heightCm > 0)
+                                mobParts.Add($"{heightCm:F0}cm");
+                            if (weightKg > 0)
+                                mobParts.Add($"{weightKg:F0}kg");
+                            if (markings.Count > 0)
+                                mobParts.Add($"markings: [{string.Join(", ", markings)}]");
+                        }
+
+                        mobParts.Add($"at {dist:F0}m ({(int)pos.X}, {(int)pos.Y})");
+                        if (mobParts.Count > 0)
+                            mobStr += " | " + string.Join(", ", mobParts);
+                        mobLines.Add(mobStr);
+                    }
+                }
+
+                var camLine = $"  Camera #{camNum} '{cam.Name}' ({(int)camPos.X}, {(int)camPos.Y}): {crewCount} crew, {mobCount} mob{(mobCount != 1 ? "s" : "")}";
+                sb.AppendLine(camLine);
+                if (mobLines.Count > 0)
+                {
+                    foreach (var ml in mobLines)
+                        sb.AppendLine($"    {ml}");
+                }
+
+                // Build machine info for this camera
+                var machineLine = string.Empty;
+                if (core.ShowMachinesGlobal)
+                {
+                    if (core.ShowMachinesDetailGlobal)
+                    {
+                        // Show machine names with positions
+                        var machineData = new Dictionary<string, (int count, Vector2 firstPos)>();
+                        var mcQuery = EntityQueryEnumerator<ActivatableUIComponent, TransformComponent, MetaDataComponent>();
+                        while (mcQuery.MoveNext(out var uid, out var ui, out var tx, out var meta))
+                        {
+                            if (uid == coreUid) continue;
+                            if (HasComp<MobStateComponent>(uid) || HasComp<ItemComponent>(uid)) continue;
+                            if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                            var pos = _xforms.GetWorldPosition(tx);
+                            if ((pos - camPos).Length() > camRange) continue;
+
+                            if (!machineData.ContainsKey(meta.EntityName))
+                                machineData[meta.EntityName] = (0, pos);
+                            var entry = machineData[meta.EntityName];
+                            entry.count++;
+                            if (entry.count == 1)
+                                entry.firstPos = pos;
+                            machineData[meta.EntityName] = entry;
+                        }
+
+                        if (machineData.Count > 0)
+                        {
+                            var parts = machineData
+                                .OrderByDescending(kv => kv.Value.count)
+                                .Select(kv =>
+                                {
+                                    var (count, firstPos) = kv.Value;
+                                    var posStr = $"({(int)firstPos.X}, {(int)firstPos.Y})";
+                                    return count > 1 ? $"{kv.Key} \u00d7{count} at {posStr}" : $"{kv.Key} at {posStr}";
+                                });
+                            machineLine = $"MACHINES: {string.Join(", ", parts)}";
+                        }
+                    }
+                    else
+                    {
+                        var machineCount = 0;
+                        var mcQuery = EntityQueryEnumerator<ActivatableUIComponent, TransformComponent>();
+                        while (mcQuery.MoveNext(out var uid, out _, out var tx))
+                        {
+                            if (uid == coreUid) continue;
+                            if (HasComp<MobStateComponent>(uid) || HasComp<ItemComponent>(uid)) continue;
+                            var pos = _xforms.GetWorldPosition(tx);
+                            if ((pos - camPos).Length() > camRange) continue;
+                            machineCount++;
+                        }
+                        machineLine = $"{machineCount} machine{(machineCount != 1 ? "s" : "")}";
+                    }
+                }
+
+                var itemLine = string.Empty;
+                if (core.ShowItemsGlobal)
+                {
+                    if (core.GlobalItemMode == ItemVisionMode.SmartSummary)
+                    {
+                        // SmartSummary: show item names with counts
+                        var itemGroups = new Dictionary<string, int>();
+                        var itQuery = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
+                        while (itQuery.MoveNext(out var uid, out var item, out var tx, out var meta))
+                        {
+                            if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                            var pos = _xforms.GetWorldPosition(tx);
+                            if ((pos - camPos).Length() > camRange) continue;
+                            if (IsOrganItem(meta.EntityName)) continue;
+
+                            if (!itemGroups.ContainsKey(meta.EntityName))
+                                itemGroups[meta.EntityName] = 0;
+                            itemGroups[meta.EntityName]++;
+                        }
+
+                        if (itemGroups.Count > 0)
+                        {
+                            var summary = string.Join(", ", itemGroups.OrderByDescending(g => g.Value).Select(g => $"{g.Key} \u00d7{g.Value}"));
+                            itemLine = $"items: {summary}";
+                        }
+                    }
+                    else // SearchEngine: just count items
+                    {
+                        var itemCount = 0;
+                        var itQuery = EntityQueryEnumerator<ItemComponent, TransformComponent>();
+                        while (itQuery.MoveNext(out var uid, out _, out var tx))
+                        {
+                            var pos = _xforms.GetWorldPosition(tx);
+                            if ((pos - camPos).Length() > camRange) continue;
+                            itemCount++;
+                        }
+                        itemLine = $"{itemCount} items";
+                    }
+                }
+
+                var statsParts = new List<string>();
+                if (core.ShowMachinesGlobal && !string.IsNullOrEmpty(machineLine))
+                    statsParts.Add(machineLine);
+                if (core.ShowItemsGlobal && !string.IsNullOrEmpty(itemLine))
+                    statsParts.Add(itemLine);
+                if (statsParts.Count > 0)
+                    sb.AppendLine($"    {string.Join(" | ", statsParts)}");
+            }
+            sb.AppendLine();
+        }
+
+        if (core.GlobalItemMode == ItemVisionMode.SearchEngine)
+            sb.AppendLine("Use {\"search_entity\": \"object name\"} to search camera feeds.");
+        else if (core.GlobalItemMode == ItemVisionMode.SmartSummary)
+            sb.AppendLine("Use {\"query_entity\": \"object name\"} for details \u2014 results show which camera found it.");
+        sb.AppendLine();
+
+        return sb.ToString();
+    }
+
+    private string BuildLocalVisionBlockFromPosition(EntityUid sourceUid, Vector2 sourcePos, CoyoteAICoreComponent core,
+        bool showPeople, bool showMachines, bool showMachinesDetail, bool showItems, bool showItemsDetail, ItemVisionMode itemMode, float camRange = 15f)
+    {
+        var mobEntries = new List<string>();
+        var machineEntries = new List<string>();
+        var itemEntries = new List<string>();
+
+        if (showPeople)
+        {
+            var mobQuery = EntityQueryEnumerator<MobStateComponent, TransformComponent, MetaDataComponent>();
+            while (mobQuery.MoveNext(out var uid, out var mobState, out var xform, out var meta))
+            {
+                if (uid == sourceUid) continue;
+                if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                var pos = _xforms.GetWorldPosition(xform);
+                var dist = (pos - sourcePos).Length();
+                if (dist > camRange) continue;
+
+                var tag = HasComp<HumanoidAppearanceComponent>(uid) ? "CREW" : "MOB";
+                mobEntries.Add($"[{tag}] {meta.EntityName} | at {dist:F0}m ({(int)pos.X}, {(int)pos.Y})");
+            }
+        }
+
+        if (showMachines)
+        {
+            var machineData = new Dictionary<string, (int count, List<float> dists, Vector2 firstPos, string desc, bool powered)>();
+            var mcQuery = EntityQueryEnumerator<ActivatableUIComponent, TransformComponent, MetaDataComponent>();
+            while (mcQuery.MoveNext(out var uid, out var ui, out var xform, out var meta))
+            {
+                if (uid == sourceUid) continue;
+                if (HasComp<MobStateComponent>(uid) || HasComp<ItemComponent>(uid)) continue;
+                if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                var pos = _xforms.GetWorldPosition(xform);
+                var dist = (pos - sourcePos).Length();
+                if (dist > camRange) continue;
+
+                if (!machineData.ContainsKey(meta.EntityName))
+                {
+                    var desc = meta.EntityDescription ?? "";
+                    var powered = TryComp<ApcPowerReceiverComponent>(uid, out var apc) && apc.Powered;
+                    machineData[meta.EntityName] = (0, new List<float>(), pos, desc, powered);
+                }
+                var entry = machineData[meta.EntityName];
+                entry.count++;
+                entry.dists.Add(dist);
+                if (entry.count == 1)
+                    entry.firstPos = pos;
+                machineData[meta.EntityName] = entry;
+            }
+
+            foreach (var (name, (count, dists, firstPos, desc, powered)) in machineData)
+            {
+                var sortedDists = dists.Distinct().OrderBy(d => d).ToList();
+                var distStr = string.Join(", ", sortedDists.Select(d => $"{d:F0}m"));
+                var line = $"[MACHINE] {name} | at {distStr} ({(int)firstPos.X}, {(int)firstPos.Y})";
+                if (showMachinesDetail)
+                {
+                    var machineDetails = new List<string>();
+                    if (!string.IsNullOrEmpty(desc))
+                        machineDetails.Add($"  desc: \"{desc}\"");
+                    machineDetails.Add($"  powered: {(powered ? "yes" : "no")}");
+                    line += "\n" + string.Join("\n", machineDetails);
+                }
+                machineEntries.Add(line);
+            }
+        }
+
+        if (showItems)
+        {
+            if (itemMode == ItemVisionMode.FeedAll)
+            {
+                var itemData = new Dictionary<string, (int count, List<float> dists, string desc, int contraband, int stackAmount)>();
+                var itQuery = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
+                while (itQuery.MoveNext(out var uid, out var item, out var xform, out var meta))
+                {
+                    if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                    var pos = _xforms.GetWorldPosition(xform);
+                    var dist = (pos - sourcePos).Length();
+                    if (dist > camRange) continue;
+                    if (IsOrganItem(meta.EntityName)) continue;
+
+                    if (!itemData.ContainsKey(meta.EntityName))
+                    {
+                        var desc = meta.EntityDescription ?? "";
+                        var contraband = GetContrabandLevel(uid, desc);
+                        var amount = TryComp<StackComponent>(uid, out var stack) ? stack.Count : 1;
+                        itemData[meta.EntityName] = (0, new List<float>(), desc, contraband, amount);
+                    }
+                    var entry = itemData[meta.EntityName];
+                    entry.count++;
+                    entry.dists.Add(dist);
+                    itemData[meta.EntityName] = entry;
+                }
+
+                foreach (var (name, (count, dists, desc, contraband, stackAmount)) in itemData)
+                {
+                    var sortedDists = dists.Distinct().OrderBy(d => d).ToList();
+                    var distStr = string.Join(", ", sortedDists.Select(d => $"{d:F0}m"));
+                    var countStr = count > 1 ? $" \u00d7{count}" : "";
+                    var header = $"[ITEM] {name}{countStr} | at {distStr}";
+                    if (showItemsDetail)
+                    {
+                        var itemDetails = new List<string> { header };
+                        if (!string.IsNullOrEmpty(desc)) itemDetails.Add($"  desc: \"{desc}\"");
+                        itemDetails.Add($"  legality: {contraband}");
+                        if (stackAmount > 1) itemDetails.Add($"  amount: {stackAmount}");
+                        itemEntries.Add(string.Join("\n", itemDetails));
+                    }
+                    else
+                        itemEntries.Add(header);
+                }
+            }
+            else if (itemMode == ItemVisionMode.SmartSummary)
+            {
+                var itemCount = 0;
+                var itemGroups = new Dictionary<string, int>();
+                var itQuery = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
+                while (itQuery.MoveNext(out var uid, out var item, out var xform, out var meta))
+                {
+                    if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                    var pos = _xforms.GetWorldPosition(xform);
+                    var dist = (pos - sourcePos).Length();
+                    if (dist > camRange) continue;
+                    if (IsOrganItem(meta.EntityName)) continue;
+
+                    itemCount++;
+                    if (!itemGroups.ContainsKey(meta.EntityName))
+                        itemGroups[meta.EntityName] = 0;
+                    itemGroups[meta.EntityName]++;
+                }
+
+                if (itemCount > 0)
+                {
+                    var summary = string.Join(", ", itemGroups.OrderByDescending(g => g.Value).Select(g => $"{g.Key} \u00d7{g.Value}"));
+                    itemEntries.Add($"  ITEMS: {itemCount} items: {summary}");
+                }
+            }
+        }
+
+        var sections = new List<string>();
+        if (mobEntries.Count > 0)
+            sections.Add("CREW: " + string.Join(", ", mobEntries));
+        if (machineEntries.Count > 0)
+            sections.Add("MACHINES: " + string.Join(", ", machineEntries));
+        if (itemEntries.Count > 0)
+            sections.Add(string.Join("; ", itemEntries));
+
+        return sections.Count > 0 ? string.Join(" | ", sections) : string.Empty;
+    }
+
+    private sealed class CameraNetworkCache
+    {
+        public Dictionary<string, int> AvailableSubnets = new();
+        public List<CameraEntry> Cameras = new();
+        public TimeSpan LastRefreshed;
+    }
+
+    private sealed class CameraEntry
+    {
+        public EntityUid Entity;
+        public string Name = string.Empty;
+        public string SubnetId = string.Empty;
+        public string SubnetName = string.Empty;
+        public Vector2 Position;
+    }
+
+    private static string MakeSubnetNameReadable(string subnetId)
+    {
+        if (string.IsNullOrEmpty(subnetId))
+            return "Unknown";
+        const string prefix = "SurveillanceCamera";
+        if (subnetId.StartsWith(prefix))
+        {
+            var name = subnetId[prefix.Length..];
+            if (string.IsNullOrEmpty(name))
+                return "General";
+            return name;
+        }
+        return subnetId;
     }
 
     private sealed class PendingRequest
@@ -2193,5 +2924,6 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         public EntityUid Entity;
         public string DisplayName = string.Empty;
         public Vector2 Position;
+        public string? CameraName;
     }
 }

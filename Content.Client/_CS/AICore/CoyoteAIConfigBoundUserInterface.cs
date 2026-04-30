@@ -19,12 +19,12 @@ public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
     {
         base.Open();
         _menu = new();
-        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange, cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax, memories, itemMode, channelLabels) =>
+        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange, cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax, memories, localItemMode, channelLabels) =>
         {
             SendMessage(new CoyoteAIConfigSaveMessage(
                 name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange,
                 cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax,
-                memories, itemMode, channelLabels));
+                memories, localItemMode, channelLabels));
         };
         _menu.OnResetHistory += () =>
         {
@@ -54,9 +54,25 @@ public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
         {
             SendMessage(new CoyoteAISetItemModeMessage(mode));
         };
+        _menu.OnSetGlobalVisionOption += (option, value) =>
+        {
+            SendMessage(new CoyoteAISetGlobalVisionOptionMessage(option, value));
+        };
+        _menu.OnSetGlobalItemMode += (mode) =>
+        {
+            SendMessage(new CoyoteAISetGlobalItemModeMessage(mode));
+        };
+        _menu.OnSetCameraSubnet += (subnetId, enabled) =>
+        {
+            SendMessage(new CoyoteAISetCameraSubnetMessage(subnetId, enabled));
+        };
         _menu.OnSetEnabled += (enabled) =>
         {
             SendMessage(new CoyoteAISetEnabledMessage { Enabled = enabled });
+        };
+        _menu.OnSetRadioChannel += (channelId, enabled) =>
+        {
+            SendMessage(new CoyoteAISetRadioChannelMessage(channelId, enabled));
         };
         _menu.OnExport += () =>
         {
