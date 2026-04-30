@@ -1,9 +1,8 @@
 <controls:FancyWindow xmlns="https://spacestation14.io"
                        xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
                        Title="AI Core"
-                         MinSize="400 180"
-                         SetSize="740 220">
-    <!-- Full config view (unlocked) -->
+                       MinSize="400 180"
+                       SetSize="740 220">
     <ScrollContainer Name="FullView" HorizontalExpand="True" VerticalExpand="True" Visible="True">
         <BoxContainer Orientation="Vertical" Margin="10" SeparationOverride="8">
             <BoxContainer Name="OwnerSection" Orientation="Vertical" SeparationOverride="4">
@@ -12,6 +11,7 @@
                 <BoxContainer Orientation="Horizontal" SeparationOverride="8">
                     <Button Name="LockButton" Text="Lock" MinSize="100 30" Disabled="True" />
                     <Button Name="AbandonButton" Text="Abandon" MinSize="120 30" Disabled="True" />
+                    <Button Name="EnabledButton" ToggleMode="True" Text="Enabled" MinSize="120 36" />
                     <Button Name="ResetHistoryButton" Text="Reset History" MinSize="140 30" />
                 </BoxContainer>
             </BoxContainer>
@@ -53,97 +53,126 @@
 
             <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
-            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
-                <Button Name="EnabledButton" ToggleMode="True" Text="Enabled" MinSize="120 36" />
-            </BoxContainer>
-
             <Label Text="Reasoning Level" />
             <OptionButton Name="ReasoningDropdown" HorizontalExpand="True" MinSize="0 30" />
 
             <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
-            <Label Text="VISION OPTIONS (more detail = more tokens)" FontColorOverride="#888888" />
+            <Button Name="VisionToggle" Text="▼ VISION" MinSize="0 30" Margin="0 4" />
+            <BoxContainer Name="VisionSection" Orientation="Vertical" SeparationOverride="4" Visible="True">
 
-            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
-                <CheckBox Name="VisionPeopleCheck" Text="People/Mobs" />
+                <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                <Label Text="── CREW/MOBS ──" FontColorOverride="#888888" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                    <CheckBox Name="VisionPeopleCheck" Text="Show People" />
+                </BoxContainer>
+
+                <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                <Label Text="── MACHINES/COMPUTERS ──" FontColorOverride="#888888" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                    <CheckBox Name="VisionMachinesCheck" Text="Show Machines" />
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                    <CheckBox Name="VisionMachinesDetailCheck" Text="Details (description, powered, distance, direction)" />
+                </BoxContainer>
+
+                <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                <Label Text="── ITEMS ──" FontColorOverride="#888888" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                    <Label Text="Item mode:" MinSize="80 30" VerticalAlignment="Center" />
+                    <OptionButton Name="ItemModeDropdown" MinSize="140 30" />
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                    <CheckBox Name="VisionItemsCheck" Text="Show Items" />
+                </BoxContainer>
+                <BoxContainer Name="ItemDetailCheckContainer" Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
+                    <CheckBox Name="VisionItemsDetailCheck" Text="Details (description, legality, amount, direction)" />
+                </BoxContainer>
             </BoxContainer>
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
-            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
-                <CheckBox Name="VisionMachinesCheck" Text="Machines/Computers" />
-            </BoxContainer>
+            <Label Name="HistoryLabel" Text="" FontColorOverride="#888888" />
+            <Label Name="TokenLabel" Text="" FontColorOverride="#888888" />
+            <Label Name="TotalTokenLabel" Text="" FontColorOverride="#888888" />
 
-            <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
-                <CheckBox Name="VisionMachinesDetailCheck" Text="Machine details (description, powered, distance, direction)" />
-            </BoxContainer>
+            <BoxContainer Name="TokenBarContainer" Orientation="Horizontal" MinSize="0 20" Margin="0 2" />
+            <BoxContainer Name="TokenLegendContainer" Orientation="Vertical" MinSize="0 16" Margin="0 0 0 4" SeparationOverride="2" />
 
-            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
-                <CheckBox Name="VisionItemsCheck" Text="Items" />
-            </BoxContainer>
+            <!-- Ship awareness display -->
+            <Label Name="ShipLabel" Text="" FontColorOverride="#888888" />
 
-            <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="16 0 0 0">
-                <CheckBox Name="VisionItemsDetailCheck" Text="Item details (description, legality, amount, distance, direction)" />
+            <!-- Load tracking display -->
+            <Label Name="LoadLabel" Text="" FontColorOverride="#888888" />
+
+            <!-- Advanced Settings toggle -->
+            <Button Name="AdvancedToggle" Text="▼ Advanced Settings" MinSize="0 30" Margin="0 4" />
+
+            <BoxContainer Name="AdvancedSection" Orientation="Vertical" SeparationOverride="4" Visible="False">
+                <Label Text="Response Cooldown" FontColorOverride="#888888" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                    <Label Text="Base (s)" MinSize="60 0" VerticalAlignment="Center" />
+                    <LineEdit Name="CooldownBaseEdit" MinSize="80 30" />
+                    <Button Name="CooldownBaseDefault" Text="Default" MinSize="70 30" />
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                    <Label Text="Char Factor" MinSize="60 0" VerticalAlignment="Center" />
+                    <LineEdit Name="CooldownCharFactorEdit" MinSize="80 30" />
+                    <Button Name="CooldownCharFactorDefault" Text="Default" MinSize="70 30" />
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                    <Label Text="Max (s)" MinSize="60 0" VerticalAlignment="Center" />
+                    <LineEdit Name="CooldownMaxEdit" MinSize="80 30" />
+                    <Button Name="CooldownMaxDefault" Text="Default" MinSize="70 30" />
+                </BoxContainer>
+
+                <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                <Label Text="Forced Auto-Continue" FontColorOverride="#888888" />
+                <CheckBox Name="AutoContinueCheck" Text="Enable forced auto-continue" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                    <Label Text="Threshold" MinSize="60 0" VerticalAlignment="Center" />
+                    <LineEdit Name="AutoContinueThresholdEdit" MinSize="80 30" />
+                    <Button Name="AutoContinueThresholdDefault" Text="Default" MinSize="70 30" />
+                </BoxContainer>
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                    <Label Text="Max Continues" MinSize="60 0" VerticalAlignment="Center" />
+                    <LineEdit Name="AutoContinueMaxEdit" MinSize="80 30" />
+                    <Button Name="AutoContinueMaxDefault" Text="Default" MinSize="70 30" />
+                </BoxContainer>
+
             </BoxContainer>
 
             <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
-        <Label Name="HistoryLabel" Text="" FontColorOverride="#888888" />
-        <Label Name="TokenLabel" Text="" FontColorOverride="#888888" />
-        <Label Name="TotalTokenLabel" Text="" FontColorOverride="#888888" />
-
-        <!-- Token breakdown bar -->
-        <BoxContainer Name="TokenBarContainer" Orientation="Horizontal" MinSize="0 20" Margin="0 2" />
-        <BoxContainer Name="TokenLegendContainer" Orientation="Vertical" MinSize="0 16" Margin="0 0 0 4" SeparationOverride="2" />
-
-        <!-- Advanced Settings toggle -->
-        <Button Name="AdvancedToggle" Text="▼ Advanced Settings" MinSize="0 30" Margin="0 4" />
-
-        <!-- Collapsible advanced settings -->
-        <BoxContainer Name="AdvancedSection" Orientation="Vertical" SeparationOverride="4" Visible="False">
-            <Label Text="Response Cooldown" FontColorOverride="#888888" />
-            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
-                <Label Text="Base (s)" MinSize="60 0" VerticalAlignment="Center" />
-                <LineEdit Name="CooldownBaseEdit" MinSize="80 30" />
-                <Button Name="CooldownBaseDefault" Text="Default" MinSize="70 30" />
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8">
+                <Button Name="ExportButton" Text="Export AI" MinSize="120 36" />
+                <Button Name="ImportButton" Text="Import AI" MinSize="120 36" />
             </BoxContainer>
-            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
-                <Label Text="Char Factor" MinSize="60 0" VerticalAlignment="Center" />
-                <LineEdit Name="CooldownCharFactorEdit" MinSize="80 30" />
-                <Button Name="CooldownCharFactorDefault" Text="Default" MinSize="70 30" />
-            </BoxContainer>
-            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
-                <Label Text="Max (s)" MinSize="60 0" VerticalAlignment="Center" />
-                <LineEdit Name="CooldownMaxEdit" MinSize="80 30" />
-                <Button Name="CooldownMaxDefault" Text="Default" MinSize="70 30" />
-            </BoxContainer>
-
-            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
-
-            <Label Text="Forced Auto-Continue" FontColorOverride="#888888" />
-            <CheckBox Name="AutoContinueCheck" Text="Enable forced auto-continue" />
-            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
-                <Label Text="Threshold" MinSize="60 0" VerticalAlignment="Center" />
-                <LineEdit Name="AutoContinueThresholdEdit" MinSize="80 30" />
-                <Button Name="AutoContinueThresholdDefault" Text="Default" MinSize="70 30" />
-            </BoxContainer>
-            <BoxContainer Orientation="Horizontal" SeparationOverride="6">
-                <Label Text="Max Continues" MinSize="60 0" VerticalAlignment="Center" />
-                <LineEdit Name="AutoContinueMaxEdit" MinSize="80 30" />
-                <Button Name="AutoContinueMaxDefault" Text="Default" MinSize="70 30" />
-            </BoxContainer>
-        </BoxContainer>
-
-            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
             <Button Name="SaveButton" Text="Save Configuration" MinSize="0 44" />
 
             <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
 
-            <Label Text="LOGIC CHANNELS" StyleClasses="LabelHeading" />
-            <BoxContainer Name="LogicChannelContainer" Orientation="Vertical" SeparationOverride="4" />
+            <Label Text="MEMORIES" StyleClasses="LabelHeading" />
+            <BoxContainer Name="MemoriesContainer" Orientation="Vertical" SeparationOverride="4" />
+            <BoxContainer Orientation="Horizontal" SeparationOverride="8" Margin="0 4">
+                <OptionButton Name="MemoryPriorityDropdown" MinSize="100 30" />
+                <LineEdit Name="NewMemoryEdit" PlaceHolder="New memory content..." HorizontalExpand="True" MinSize="0 30" />
+                <Button Name="AddMemoryButton" Text="Add" MinSize="60 30" />
+            </BoxContainer>
+
+            <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+            <Button Name="LogicChannelsToggle" Text="▶ LOGIC CHANNELS" MinSize="0 30" Margin="0 4" />
+            <BoxContainer Name="LogicChannelsSection" Orientation="Vertical" SeparationOverride="4" Visible="False">
+                <BoxContainer Name="LogicChannelContainer" Orientation="Vertical" SeparationOverride="4" />
+            </BoxContainer>
         </BoxContainer>
     </ScrollContainer>
 
-    <!-- Locked view (no scroll, minimal) -->
     <BoxContainer Name="LockedView" Orientation="Vertical" Margin="10" SeparationOverride="4"
                   VerticalExpand="True" HorizontalExpand="True" Visible="False">
         <Label Name="LockedOwnerLabel" Text="Registered to:" FontColorOverride="#00FF00" />

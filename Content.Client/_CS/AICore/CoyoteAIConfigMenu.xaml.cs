@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Numerics;
 using Content.Client.UserInterface.Controls;
 using Content.Shared._CS.AICore;
@@ -12,13 +13,19 @@ namespace Content.Client._CS.AICore;
 [GenerateTypedNameReferences]
 public sealed partial class CoyoteAIConfigMenu : FancyWindow
 {
-    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax);
+    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax, List<AICoreMemory>? memories, ItemVisionMode itemMode);
     public event SaveDelegate? OnSave;
     public event Action? OnResetHistory;
     public event Action<int, LogicChannelMode>? OnSetChannel;
     public event Action? OnToggleLock;
     public event Action? OnUnclaim;
     public event Action<string, bool>? OnSetVisionOption;
+    public event Action<ItemVisionMode>? OnSetItemMode;
+    public event Action<bool>? OnSetEnabled;
+    public event Action? OnExport;
+    public event Action<string>? OnImport;
+    public event Action<string, MemoryPriority, List<string>>? OnAddMemory;
+    public event Action<string>? OnRemoveMemory;
 
     private readonly Button[] _channelButtons = new Button[10];
     private LogicChannelMode[] _channelStates = new LogicChannelMode[10];
@@ -29,6 +36,10 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
     private readonly Dictionary<Button, Action> _confirmActions = new();
 
     private bool _advancedExpanded;
+    private bool _visionExpanded = true;
+    private bool _logicChannelsExpanded;
+    private List<AICoreMemory> _memories = new();
+    private readonly HashSet<string> _expandedMemoryIds = new();
 
     public CoyoteAIConfigMenu()
     {
@@ -36,7 +47,7 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
 
         AiNameEdit.PlaceHolder = "Enter AI name...";
         PersonalityEdit.PlaceHolder = "e.g. A helpful but sardonic overseer";
-        MaxHistoryEdit.PlaceHolder = "30";
+        MaxHistoryEdit.PlaceHolder = "200";
         MaxTokensEdit.PlaceHolder = "128000";
         VisionRangeEdit.PlaceHolder = "15";
         ApiEndpointEdit.PlaceHolder = "http://localhost:1234/v1/chat/completions";
@@ -78,54 +89,40 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         AutoContinueThresholdDefault.OnPressed += _ => AutoContinueThresholdEdit.Text = "400";
         AutoContinueMaxDefault.OnPressed += _ => AutoContinueMaxEdit.Text = "2";
 
-        SaveButton.OnPressed += _ =>
-        {
-            var name = AiNameEdit.Text.Trim();
-            var personality = PersonalityEdit.Text.Trim();
-            var endpoint = ApiEndpointEdit.Text.Trim();
-            var model = ModelNameEdit.Text.Trim();
-            var apiKey = ApiKeyEdit.Text.Trim();
-            float.TryParse(TemperatureEdit.Text.Trim(), out var temp);
-            if (temp <= 0f) temp = 0.7f;
-            if (temp > 2f) temp = 2f;
-            int.TryParse(MaxHistoryEdit.Text.Trim(), out var maxHistory);
-            if (maxHistory < 5) maxHistory = 30;
-            if (maxHistory > 1000) maxHistory = 1000;
-
-            var maxTokensRaw = MaxTokensEdit.Text.Trim();
-            int.TryParse(maxTokensRaw, out var maxTokens);
-            if (maxTokens < 1) maxTokens = 128000;
-
-            float.TryParse(VisionRangeEdit.Text.Trim(), out var visionRange);
-            if (visionRange < 1f) visionRange = 15f;
-            if (visionRange > 15f) visionRange = 15f;
-            var enabled = EnabledButton.Pressed;
-            var reasoning = (ReasoningLevel)ReasoningDropdown.SelectedId;
-            var selectedLawSet = LawSetDropdown.ItemCount > 0
-                ? (LawSetDropdown.GetItemMetadata(LawSetDropdown.SelectedId) as string) ?? ""
-                : "";
-
-            float.TryParse(CooldownBaseEdit.Text.Trim(), out var cdBase);
-            if (cdBase <= 0f) cdBase = 0.3f;
-            float.TryParse(CooldownCharFactorEdit.Text.Trim(), out var cdFactor);
-            if (cdFactor <= 0f) cdFactor = 0.02f;
-            float.TryParse(CooldownMaxEdit.Text.Trim(), out var cdMax);
-            if (cdMax <= 0f) cdMax = 4f;
-            var autoContinue = AutoContinueCheck.Pressed;
-            int.TryParse(AutoContinueThresholdEdit.Text.Trim(), out var autoThreshold);
-            if (autoThreshold < 50) autoThreshold = 400;
-            int.TryParse(AutoContinueMaxEdit.Text.Trim(), out var autoMax);
-            if (autoMax < 1) autoMax = 2;
-
-            OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax);
-        };
+        SaveButton.OnPressed += _ => PerformSave();
 
         LockButton.OnPressed += _ => OnToggleLock?.Invoke();
         LockedLockButton.OnPressed += _ => OnToggleLock?.Invoke();
+        EnabledButton.OnPressed += _ => OnSetEnabled?.Invoke(EnabledButton.Pressed);
 
         SetupConfirmButton(AbandonButton, "Abandon", () => OnUnclaim?.Invoke());
         SetupConfirmButton(ResetHistoryButton, "Reset History", () => OnResetHistory?.Invoke());
         SetupConfirmButton(LockedAbandonButton, "Abandon", () => OnUnclaim?.Invoke());
+
+        ExportButton.OnPressed += _ => OnExport?.Invoke();
+        ImportButton.OnPressed += _ =>
+        {
+            PerformSave();
+            OnImport?.Invoke("trigger");
+        };
+
+        MemoryPriorityDropdown.AddItem("Low");
+        MemoryPriorityDropdown.AddItem("Normal");
+        MemoryPriorityDropdown.AddItem("High");
+        MemoryPriorityDropdown.SelectId(1);
+        MemoryPriorityDropdown.OnItemSelected += args =>
+        {
+            MemoryPriorityDropdown.SelectId(args.Id);
+        };
+
+        AddMemoryButton.OnPressed += _ =>
+        {
+            var content = NewMemoryEdit.Text.Trim();
+            if (string.IsNullOrEmpty(content)) return;
+            var priority = (MemoryPriority)MemoryPriorityDropdown.SelectedId;
+            OnAddMemory?.Invoke(content, priority, new());
+            NewMemoryEdit.Text = "";
+        };
 
         BuildChannelRows();
 
@@ -142,6 +139,74 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
             VisionItemsDetailCheck.Disabled = !VisionItemsCheck.Pressed;
         };
         VisionItemsDetailCheck.OnPressed += _ => OnSetVisionOption?.Invoke("ShowItemsDetail", VisionItemsDetailCheck.Pressed);
+
+        ItemModeDropdown.AddItem("Feed All");
+        ItemModeDropdown.AddItem("Smart Summary");
+        ItemModeDropdown.AddItem("Search Engine");
+        ItemModeDropdown.SelectId(2);
+        ItemModeDropdown.OnItemSelected += args =>
+        {
+            ItemModeDropdown.SelectId(args.Id);
+            var mode = (ItemVisionMode)args.Id;
+            ItemDetailCheckContainer.Visible = mode == ItemVisionMode.FeedAll;
+            OnSetItemMode?.Invoke(mode);
+        };
+
+        VisionToggle.OnPressed += _ =>
+        {
+            _visionExpanded = !_visionExpanded;
+            VisionToggle.Text = _visionExpanded ? "▼ VISION" : "▶ VISION";
+            VisionSection.Visible = _visionExpanded;
+        };
+
+        LogicChannelsToggle.OnPressed += _ =>
+        {
+            _logicChannelsExpanded = !_logicChannelsExpanded;
+            LogicChannelsToggle.Text = _logicChannelsExpanded ? "▼ LOGIC CHANNELS" : "▶ LOGIC CHANNELS";
+            LogicChannelsSection.Visible = _logicChannelsExpanded;
+        };
+    }
+
+    private void PerformSave()
+    {
+        var name = AiNameEdit.Text.Trim();
+        var personality = PersonalityEdit.Text.Trim();
+        var endpoint = ApiEndpointEdit.Text.Trim();
+        var model = ModelNameEdit.Text.Trim();
+        var apiKey = ApiKeyEdit.Text.Trim();
+        float.TryParse(TemperatureEdit.Text.Trim(), out var temp);
+        if (temp <= 0f) temp = 0.7f;
+        if (temp > 2f) temp = 2f;
+        int.TryParse(MaxHistoryEdit.Text.Trim(), out var maxHistory);
+        if (maxHistory < 5) maxHistory = 200;
+        if (maxHistory > 1000) maxHistory = 1000;
+
+        var maxTokensRaw = MaxTokensEdit.Text.Trim();
+        int.TryParse(maxTokensRaw, out var maxTokens);
+        if (maxTokens < 1) maxTokens = 128000;
+
+        float.TryParse(VisionRangeEdit.Text.Trim(), out var visionRange);
+        if (visionRange < 1f) visionRange = 15f;
+        if (visionRange > 15f) visionRange = 15f;
+        var enabled = EnabledButton.Pressed;
+        var reasoning = (ReasoningLevel)ReasoningDropdown.SelectedId;
+        var selectedLawSet = LawSetDropdown.ItemCount > 0
+            ? (LawSetDropdown.GetItemMetadata(LawSetDropdown.SelectedId) as string) ?? ""
+            : "";
+
+        float.TryParse(CooldownBaseEdit.Text.Trim(), out var cdBase);
+        if (cdBase <= 0f) cdBase = 0.3f;
+        float.TryParse(CooldownCharFactorEdit.Text.Trim(), out var cdFactor);
+        if (cdFactor <= 0f) cdFactor = 0.02f;
+        float.TryParse(CooldownMaxEdit.Text.Trim(), out var cdMax);
+        if (cdMax <= 0f) cdMax = 4f;
+        var autoContinue = AutoContinueCheck.Pressed;
+        int.TryParse(AutoContinueThresholdEdit.Text.Trim(), out var autoThreshold);
+        if (autoThreshold < 50) autoThreshold = 400;
+        int.TryParse(AutoContinueMaxEdit.Text.Trim(), out var autoMax);
+        if (autoMax < 1) autoMax = 2;
+
+        OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax, _memories, (ItemVisionMode)ItemModeDropdown.SelectedId);
     }
 
     private void SetupConfirmButton(Button btn, string defaultText, Action onConfirm)
@@ -267,75 +332,157 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         onBtn!.Pressed = mode == LogicChannelMode.On;
     }
 
-private void BuildTokenBar(CoyoteAIConfigBuiState state)
-{
-    TokenBarContainer.Children.Clear();
-    TokenLegendContainer.Children.Clear();
-
-    var totalTokens = state.TotalEstimatedTokens;
-    if (totalTokens <= 0)
-        return;
-
-    var segments = new (string label, int tokens, Color color)[]
+    private void BuildTokenBar(CoyoteAIConfigBuiState state)
     {
-        ("Vision", state.TokenVision, new Color(0.90f, 0.49f, 0.13f)),
-        ("System", state.TokenSystem, new Color(0.29f, 0.56f, 0.85f)),
-        ("Person/Lore", state.TokenPersonLore, new Color(0.31f, 0.78f, 0.47f)),
-        ("Crew/Xeno", state.TokenCrewXeno, new Color(0.96f, 0.65f, 0.14f)),
-        ("History", state.TokenHistory, new Color(0.91f, 0.30f, 0.24f)),
-        ("Context", state.TokenContext, new Color(0.61f, 0.35f, 0.71f)),
-    };
+        TokenBarContainer.Children.Clear();
+        TokenLegendContainer.Children.Clear();
 
-    var barWidth = 680f;
-    foreach (var (label, tokens, color) in segments)
-    {
-        if (tokens <= 0) continue;
-        var frac = (float)tokens / totalTokens;
-        var seg = new PanelContainer
+        var totalTokens = state.TotalEstimatedTokens;
+        if (totalTokens <= 0)
+            return;
+
+        var segments = new (string label, int tokens, Color color)[]
         {
-            MinSize = new Vector2(Math.Max(frac * barWidth, 6), 20),
-            ToolTip = $"{label}: ~{tokens} tokens ({frac * 100:F0}%)",
-            PanelOverride = new StyleBoxFlat { BackgroundColor = color }
+            ("Vision", state.TokenVision, new Color(0.90f, 0.49f, 0.13f)),
+            ("System", state.TokenSystem, new Color(0.29f, 0.56f, 0.85f)),
+            ("Person/Lore", state.TokenPersonLore, new Color(0.31f, 0.78f, 0.47f)),
+            ("Crew/Xeno", state.TokenCrewXeno, new Color(0.96f, 0.65f, 0.14f)),
+            ("History", state.TokenHistory, new Color(0.91f, 0.30f, 0.24f)),
+            ("Context", state.TokenContext, new Color(0.61f, 0.35f, 0.71f)),
         };
-        TokenBarContainer.AddChild(seg);
+
+        var barWidth = 680f;
+        foreach (var (label, tokens, color) in segments)
+        {
+            if (tokens <= 0) continue;
+            var frac = (float)tokens / totalTokens;
+            var seg = new PanelContainer
+            {
+                MinSize = new Vector2(Math.Max(frac * barWidth, 6), 20),
+                ToolTip = $"{label}: ~{tokens} tokens ({frac * 100:F0}%)",
+                PanelOverride = new StyleBoxFlat { BackgroundColor = color }
+            };
+            TokenBarContainer.AddChild(seg);
+        }
+
+        foreach (var (label, tokens, color) in segments)
+        {
+            if (tokens <= 0) continue;
+            var frac = (float)tokens / totalTokens;
+
+            var row = new BoxContainer
+            {
+                Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                SeparationOverride = 6
+            };
+
+            var colorSwatch = new PanelContainer
+            {
+                MinSize = new Vector2(10, 10),
+                VerticalAlignment = VAlignment.Center,
+                PanelOverride = new StyleBoxFlat { BackgroundColor = color }
+            };
+
+            var labelText = new Label
+            {
+                Text = $"{label}: ",
+                FontColorOverride = Color.Gray
+            };
+
+            var valueText = new Label
+            {
+                Text = $"~{tokens} ({frac * 100:F0}%)",
+                FontColorOverride = color
+            };
+
+            row.AddChild(colorSwatch);
+            row.AddChild(labelText);
+            row.AddChild(valueText);
+            TokenLegendContainer.AddChild(row);
+        }
     }
 
-    foreach (var (label, tokens, color) in segments)
+    private void BuildMemoryRows()
     {
-        if (tokens <= 0) continue;
-        var frac = (float)tokens / totalTokens;
-
-        var row = new BoxContainer
+        MemoriesContainer.Children.Clear();
+        foreach (var mem in _memories)
         {
-            Orientation = BoxContainer.LayoutOrientation.Horizontal,
-            SeparationOverride = 6
-        };
+            var memId = mem.Id;
+            var alreadyExpanded = _expandedMemoryIds.Contains(memId);
+            var fullText = $"[{mem.Priority}] {mem.Content}";
+            var collapsedText = fullText.Length > 80 ? fullText[..77] + "..." : fullText;
 
-        var colorSwatch = new PanelContainer
-        {
-            MinSize = new Vector2(10, 10),
-            VerticalAlignment = VAlignment.Center,
-            PanelOverride = new StyleBoxFlat { BackgroundColor = color }
-        };
+            var expandBtn = new Button
+            {
+                Text = alreadyExpanded ? "▲" : "▼",
+                MinSize = new Vector2(24, 24),
+            };
 
-        var labelText = new Label
-        {
-            Text = $"{label}: ",
-            FontColorOverride = Color.Gray
-        };
+            var deleteBtn = new Button
+            {
+                Text = "X",
+                MinSize = new Vector2(30, 24),
+            };
+            deleteBtn.OnPressed += _ => OnRemoveMemory?.Invoke(memId);
 
-        var valueText = new Label
-        {
-            Text = $"~{tokens} ({frac * 100:F0}%)",
-            FontColorOverride = color
-        };
+            expandBtn.OnPressed += _ =>
+            {
+                if (_expandedMemoryIds.Contains(memId))
+                    _expandedMemoryIds.Remove(memId);
+                else
+                    _expandedMemoryIds.Add(memId);
+                BuildMemoryRows();
+            };
 
-        row.AddChild(colorSwatch);
-        row.AddChild(labelText);
-        row.AddChild(valueText);
-        TokenLegendContainer.AddChild(row);
+            if (alreadyExpanded)
+            {
+                var contentLabel = new Label
+                {
+                    Text = fullText,
+                    HorizontalExpand = true,
+                    VerticalAlignment = VAlignment.Top,
+                    ClipText = false
+                };
+                var btnRow = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    SeparationOverride = 4,
+                    MinSize = new Vector2(0, 28)
+                };
+                btnRow.AddChild(expandBtn);
+                btnRow.AddChild(deleteBtn);
+
+                var row = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Vertical,
+                    SeparationOverride = 2
+                };
+                row.AddChild(contentLabel);
+                row.AddChild(btnRow);
+                MemoriesContainer.AddChild(row);
+            }
+            else
+            {
+                var contentLabel = new Label
+                {
+                    Text = collapsedText,
+                    HorizontalExpand = true,
+                    VerticalAlignment = VAlignment.Center,
+                    ClipText = true
+                };
+                var row = new BoxContainer
+                {
+                    Orientation = BoxContainer.LayoutOrientation.Horizontal,
+                    SeparationOverride = 4,
+                    MinSize = new Vector2(0, 28)
+                };
+                row.AddChild(contentLabel);
+                row.AddChild(expandBtn);
+                row.AddChild(deleteBtn);
+                MemoriesContainer.AddChild(row);
+            }
+        }
     }
-}
 
     public void UpdateState(CoyoteAIConfigBuiState state)
     {
@@ -346,10 +493,33 @@ private void BuildTokenBar(CoyoteAIConfigBuiState state)
         if (lockedView)
         {
             SetSize = new Vector2(450, 160);
-            LockedOwnerLabel.Text = $"Registered to: {state.OwnerName}";
-            LockedStatusLabel.Text = state.IsLocked ? "Status: Locked" : "Status: Unlocked";
+
+            if (string.IsNullOrEmpty(state.OwnerName))
+            {
+                LockedOwnerLabel.Text = "Unclaimed - Swipe an ID card to claim";
+                LockedOwnerLabel.FontColorOverride = Color.Orange;
+            }
+            else
+            {
+                LockedOwnerLabel.Text = $"Registered to: {state.OwnerName}";
+                LockedOwnerLabel.FontColorOverride = Color.Green;
+            }
+
+            if (state.AiLocked)
+            {
+                LockedStatusLabel.Text = "Status: AI-Locked";
+                LockedStatusLabel.FontColorOverride = Color.Cyan;
+                LockedLockButton.Disabled = true;
+            }
+            else
+            {
+                LockedStatusLabel.Text = state.IsLocked ? "Status: Locked" : "Status: Unlocked";
+                LockedStatusLabel.FontColorOverride = state.IsLocked ? Color.Green : Color.Gray;
+                LockedLockButton.Disabled = false;
+            }
+
             LockedLockButton.Text = state.IsLocked ? "Unlock" : "Lock";
-            LockedAbandonButton.Disabled = state.IsLocked;
+            LockedAbandonButton.Disabled = state.IsLocked || !state.IsClaimed;
             return;
         }
 
@@ -360,6 +530,30 @@ private void BuildTokenBar(CoyoteAIConfigBuiState state)
         TotalTokenLabel.Text = $"Total prompt tokens: ~{state.TotalEstimatedTokens}";
 
         BuildTokenBar(state);
+
+        // Ship & load display
+        if (!string.IsNullOrEmpty(state.OriginalShipName) || !string.IsNullOrEmpty(state.CurrentShipName))
+        {
+            ShipLabel.Text = $"Vessel: {state.CurrentShipName} (built: {state.OriginalShipName})";
+        }
+        else
+        {
+            ShipLabel.Text = "";
+        }
+
+        if (state.LoadCount > 0)
+        {
+            LoadLabel.Text = $"Loads: {state.LoadCount} | {state.LoadTimestampsDisplay}";
+        }
+        else
+        {
+            LoadLabel.Text = "";
+        }
+
+        // Memories
+        _memories = state.Memories;
+        _expandedMemoryIds.RemoveWhere(id => !_memories.Any(m => m.Id == id));
+        BuildMemoryRows();
 
         VisionPeopleCheck.Pressed = state.ShowPeople;
         VisionMachinesCheck.Pressed = state.ShowMachines;
@@ -381,6 +575,9 @@ private void BuildTokenBar(CoyoteAIConfigBuiState state)
             TemperatureEdit.Text = state.Temperature.ToString("F1");
             EnabledButton.Pressed = state.Enabled;
             ReasoningDropdown.SelectId((int)state.ReasoningLevelData);
+
+            ItemModeDropdown.SelectId((int)state.ItemMode);
+            ItemDetailCheckContainer.Visible = state.ItemMode == ItemVisionMode.FeedAll;
 
             CooldownBaseEdit.Text = state.CooldownBase.ToString("F1");
             CooldownCharFactorEdit.Text = state.CooldownCharFactor.ToString("F3");
@@ -425,10 +622,32 @@ private void BuildTokenBar(CoyoteAIConfigBuiState state)
         {
             OwnerLabel.Text = $"Registered to: {state.OwnerName}";
             OwnerLabel.FontColorOverride = Color.Green;
-            LockStatusLabel.Text = state.IsLocked ? "Status: Locked" : "Status: Unlocked";
-            LockButton.Text = state.IsLocked ? "Unlock" : "Lock";
-            LockButton.Disabled = false;
-            AbandonButton.Disabled = state.IsLocked;
+            if (state.AiLocked)
+            {
+                LockStatusLabel.Text = "Status: AI-Locked";
+                LockStatusLabel.FontColorOverride = Color.Cyan;
+                LockButton.Text = "Locked by AI";
+                LockButton.Disabled = true;
+                AbandonButton.Disabled = true;
+            }
+            else
+            {
+                LockStatusLabel.Text = state.IsLocked ? "Status: Locked" : "Status: Unlocked";
+                LockStatusLabel.FontColorOverride = state.IsLocked ? Color.Green : Color.Gray;
+                LockButton.Text = state.IsLocked ? "Unlock" : "Lock";
+                LockButton.Disabled = false;
+                AbandonButton.Disabled = state.IsLocked;
+            }
+        }
+        else if (state.AiLocked)
+        {
+            OwnerLabel.Text = "Unclaimed - Swipe an ID card to claim";
+            OwnerLabel.FontColorOverride = Color.Orange;
+            LockStatusLabel.Text = "Status: AI-Locked";
+            LockStatusLabel.FontColorOverride = Color.Cyan;
+            LockButton.Text = "Locked by AI";
+            LockButton.Disabled = true;
+            AbandonButton.Disabled = true;
         }
         else
         {

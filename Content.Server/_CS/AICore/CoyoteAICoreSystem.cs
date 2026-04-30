@@ -10,9 +10,14 @@ using Content.Server.Power.Components;
 using Content.Server.Radio;
 using Content.Server.Radio.Components;
 using Content.Server.Radio.EntitySystems;
+using Content.Server.Station.Systems;
+using Content.Shared.Access;
 using Content.Shared.Access.Components;
+using Content.Shared.Access.Systems;
 using Content.Shared.Chat;
 using Content.Shared.Damage;
+using Content.Shared.Doors.Components;
+using Content.Shared.Doors.Systems;
 using Content.Shared.Eye;
 using Content.Shared.Examine;
 using Content.Shared.Hands.Components;
@@ -34,11 +39,13 @@ using Content.Shared.Roles;
 using Content.Shared.Roles.Jobs;
 using Content.Shared.Stacks;
 using Content.Shared._CS.AICore;
+using Content.Shared._NF.Shipyard.Components;
 using Content.Shared.Silicons.Laws;
 using Content.Shared.UserInterface;
 using Content.Shared.VendingMachines;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
@@ -75,6 +82,8 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     [Dependency] private readonly ExamineSystemShared _examine = default!;
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly PointingSystem _pointingSystem = default!;
+    [Dependency] private readonly StationSystem _stationSystem = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
 
 
     private readonly Dictionary<string, Queue<ChatEntry>> _histories = new();
@@ -86,6 +95,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
     private readonly HashSet<string> _busyCores = new();
     private readonly Dictionary<string, List<ChatEntry>> _pendingBatches = new();
     private readonly Dictionary<string, int> _autoContinueCounts = new();
+    private readonly Dictionary<string, List<SearchResult>> _searchResults = new();
     private TimeSpan _lastUiRefresh = TimeSpan.Zero;
     private TimeSpan _lastFullUiRefresh = TimeSpan.Zero;
 
@@ -104,10 +114,16 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIResetHistoryMessage>(OnResetHistory);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetLogicChannelMessage>(OnSetLogicChannel);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetVisionOptionMessage>(OnSetVisionOption);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetItemModeMessage>(OnSetItemMode);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAISetEnabledMessage>(OnSetEnabled);
         SubscribeLocalEvent<CoyoteAICoreComponent, BoundUserInterfaceMessageAttempt>(OnBuiAttempt);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIToggleLockMessage>(OnToggleLock);
         SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIUnclaimMessage>(OnUnclaim);
         SubscribeLocalEvent<CoyoteAICoreComponent, InteractUsingEvent>(OnInteractUsing);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIExportMessage>(OnExportRequest);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIImportMessage>(OnImport);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIAddMemoryMessage>(OnAddMemory);
+        SubscribeLocalEvent<CoyoteAICoreComponent, CoyoteAIRemoveMemoryMessage>(OnRemoveMemory);
     }
 
     public override void Update(float frameTime)
@@ -153,6 +169,21 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
         if (!string.IsNullOrEmpty(ent.Comp.AiName))
             _metaData.SetEntityName(ent, $"VIGIL CORE-{ent.Comp.AiName}");
+
+        // Ship awareness
+        var vessel = GetCurrentVesselName(ent);
+        if (string.IsNullOrEmpty(ent.Comp.OriginalShipName))
+            ent.Comp.OriginalShipName = vessel;
+        if (string.IsNullOrEmpty(ent.Comp.ConstructionDate))
+            ent.Comp.ConstructionDate = FormatTime(_timing.CurTime);
+
+        // Load tracking
+        ent.Comp.LoadCount++;
+        var realDate = DateTime.Now.ToString("yyyy-MM-dd");
+        var shiftTime = FormatTime(_timing.CurTime);
+        ent.Comp.LoadTimestamps.Add($"Shift {shiftTime} | {realDate}");
+        if (ent.Comp.LoadTimestamps.Count > 20)
+            ent.Comp.LoadTimestamps.RemoveRange(0, ent.Comp.LoadTimestamps.Count - 20);
     }
 
     private void OnShutdown(Entity<CoyoteAICoreComponent> ent, ref ComponentShutdown args)
@@ -387,7 +418,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
         var lawBlock = BuildLawBlock(core.LawSet);
         var visionBlock = BuildVisionBlock(uid, core);
-        var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, timeSinceLast, out _);
+        var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, timeSinceLast, GetCurrentVesselName((uid, core)), out _);
         var userPrompt = _promptBuilder.BuildUserPrompt(history, entry, shiftDuration, distance);
 
         _pendingRequests.Enqueue(new PendingRequest
@@ -454,13 +485,6 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             _coreDelays[response.CoreId] = _timing.CurTime + TimeSpan.FromSeconds(0.5);
             return;
         }
-        if (!response.Response.ShouldRespond)
-        {
-            Log.Debug($"CoyoteAI: Inject skipped, ShouldRespond=false for core {response.CoreId}");
-            _busyCores.Remove(response.CoreId);
-            _coreDelays[response.CoreId] = _timing.CurTime + TimeSpan.FromSeconds(0.5);
-            return;
-        }
 
         if (!Exists(response.CoreUid))
         {
@@ -477,6 +501,132 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             _busyCores.Remove(response.CoreId);
             _coreDelays.Remove(response.CoreId);
             _pendingBatches.Remove(response.CoreId);
+            return;
+        }
+
+        // ── Vision queries bypass should_respond (they're info requests, not chat) ──
+        if (HandleVisionQuery(response, core))
+            return;
+
+        // ── Actions always processed even when should_respond=false ──
+        var action = !string.IsNullOrEmpty(response.Response.Action) ? response.Response.Action.ToLowerInvariant() : null;
+        if (action != null)
+        {
+            if (!string.IsNullOrEmpty(response.Response.ActionChannel))
+            {
+                var channelName = response.Response.ActionChannel.ToLowerInvariant();
+                var channelIdx = Array.FindIndex(CoyoteAICoreComponent.LogicChannelNames, n => n == channelName);
+                if (channelIdx >= 0)
+                {
+                    Log.Debug($"CoyoteAI: Logic channel action '{action}' on '{channelName}'");
+                    switch (action)
+                    {
+                        case "pulse":
+                            core.ChannelStates[channelIdx] = LogicChannelMode.Pulse;
+                            _pulseEndTimes[(core.CoreId, channelIdx)] = _timing.CurTime + TimeSpan.FromSeconds(1);
+                            break;
+                        case "on":
+                            core.ChannelStates[channelIdx] = LogicChannelMode.On;
+                            _pulseEndTimes.Remove((core.CoreId, channelIdx));
+                            break;
+                        case "off":
+                            core.ChannelStates[channelIdx] = LogicChannelMode.Off;
+                            _pulseEndTimes.Remove((core.CoreId, channelIdx));
+                            break;
+                    }
+                    Dirty(response.CoreUid, core);
+                    UpdateConfigUi((response.CoreUid, core));
+                    var portName = "Channel" + channelName.Substring(0, 1).ToUpper() + channelName.Substring(1);
+                    var signal = action != "off";
+                    _deviceLink.SendSignal(response.CoreUid, portName, signal);
+                }
+            }
+
+            // Core lock/unlock/abandon
+            switch (action)
+            {
+                case "core_lock":
+                    core.IsLocked = true;
+                    core.AiLocked = true;
+                    Dirty(response.CoreUid, core);
+                    UpdateConfigUi((response.CoreUid, core));
+                    Log.Debug($"CoyoteAI: Core {response.CoreId} locked by AI");
+                    break;
+                case "core_unlock":
+                    core.IsLocked = false;
+                    core.AiLocked = false;
+                    Dirty(response.CoreUid, core);
+                    UpdateConfigUi((response.CoreUid, core));
+                    Log.Debug($"CoyoteAI: Core {response.CoreId} unlocked by AI");
+                    break;
+                case "core_abandon" when core.IsClaimed:
+                    var abandonNow = FormatTime(_timing.CurTime);
+                    foreach (var r in core.OwnershipHistory)
+                    {
+                        if (r.UnclaimedAt == null)
+                            r.UnclaimedAt = abandonNow;
+                    }
+                    core.OwnerId = string.Empty;
+                    core.OwnerName = string.Empty;
+                    core.IsLocked = false;
+                    core.AiLocked = false;
+                    Dirty(response.CoreUid, core);
+                    UpdateOwnerDescription((response.CoreUid, core));
+                    UpdateConfigUi((response.CoreUid, core));
+                    Log.Debug($"CoyoteAI: Core {response.CoreId} abandoned by AI");
+                    break;
+            }
+        }
+
+        // Memory actions
+        if (!string.IsNullOrEmpty(response.Response.MemoryAdd) && response.Response.MemoryAdd != "true")
+        {
+            var priority = response.Response.MemoryAddPriority?.ToLowerInvariant() switch
+            {
+                "low" => MemoryPriority.Low,
+                "high" => MemoryPriority.High,
+                "critical" => MemoryPriority.Critical,
+                _ => MemoryPriority.Normal
+            };
+            var tags = response.Response.MemoryAddTags ?? new();
+            core.Memories.Add(new AICoreMemory
+            {
+                Id = Guid.NewGuid().ToString(),
+                Content = response.Response.MemoryAdd,
+                Priority = priority,
+                Tags = tags,
+                CreatedAt = FormatTime(_timing.CurTime),
+                LastAccessedAt = FormatTime(_timing.CurTime)
+            });
+            PruneMemories(core);
+            Dirty(response.CoreUid, core);
+            Log.Debug($"CoyoteAI: Memory added for core {response.CoreId}: {response.Response.MemoryAdd}");
+        }
+
+        if (!string.IsNullOrEmpty(response.Response.MemoryRemove))
+        {
+            core.Memories.RemoveAll(m => m.Id == response.Response.MemoryRemove);
+            Dirty(response.CoreUid, core);
+            Log.Debug($"CoyoteAI: Memory removed for core {response.CoreId}");
+        }
+
+        if (response.Response.MemoryClear && response.Response.MemoryClearConfirm)
+        {
+            core.Memories.Clear();
+            Dirty(response.CoreUid, core);
+            Log.Debug($"CoyoteAI: All memories cleared for core {response.CoreId}");
+        }
+
+        if (!string.IsNullOrEmpty(response.Response.PointAt))
+        {
+            PointAtEntity(response.CoreUid, response.Response.PointAt, core.VisionRange);
+        }
+
+        if (!response.Response.ShouldRespond)
+        {
+            Log.Debug($"CoyoteAI: Inject skipped, ShouldRespond=false for core {response.CoreId}");
+            _busyCores.Remove(response.CoreId);
+            _coreDelays[response.CoreId] = _timing.CurTime + TimeSpan.FromSeconds(0.5);
             return;
         }
 
@@ -541,43 +691,6 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                 Message = message,
                 Timestamp = _timing.CurTime
             });
-        }
-
-        if (!string.IsNullOrEmpty(response.Response.Action) && !string.IsNullOrEmpty(response.Response.ActionChannel))
-        {
-            Log.Debug($"CoyoteAI: Action triggered on channel '{response.Response.ActionChannel}': {response.Response.Action}");
-            var action = response.Response.Action.ToLowerInvariant();
-            var channelName = response.Response.ActionChannel.ToLowerInvariant();
-            var channelIdx = Array.FindIndex(CoyoteAICoreComponent.LogicChannelNames, n => n == channelName);
-            if (channelIdx >= 0)
-            {
-                switch (action)
-                {
-                    case "pulse":
-                        core.ChannelStates[channelIdx] = LogicChannelMode.Pulse;
-                        _pulseEndTimes[(core.CoreId, channelIdx)] = _timing.CurTime + TimeSpan.FromSeconds(1);
-                        break;
-                    case "on":
-                        core.ChannelStates[channelIdx] = LogicChannelMode.On;
-                        _pulseEndTimes.Remove((core.CoreId, channelIdx));
-                        break;
-                    case "off":
-                        core.ChannelStates[channelIdx] = LogicChannelMode.Off;
-                        _pulseEndTimes.Remove((core.CoreId, channelIdx));
-                        break;
-                }
-                Dirty(response.CoreUid, core);
-                UpdateConfigUi((response.CoreUid, core));
-
-                var portName = "Channel" + channelName.Substring(0, 1).ToUpper() + channelName.Substring(1);
-                var signal = action == "off" ? false : true;
-                _deviceLink.SendSignal(response.CoreUid, portName, signal);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(response.Response.PointAt))
-        {
-            PointAtEntity(response.CoreUid, response.Response.PointAt, core.VisionRange);
         }
 
         // Clear busy flag — new messages will now be queued or start fresh requests
@@ -693,6 +806,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.AutoContinue = args.AutoContinue;
         ent.Comp.AutoContinueThreshold = Math.Max(args.AutoContinueThreshold, 50);
         ent.Comp.AutoContinueMax = Math.Clamp(args.AutoContinueMax, 1, 10);
+        ent.Comp.ItemMode = args.ItemMode;
+        if (args.Memories != null)
+            ent.Comp.Memories = args.Memories;
         Dirty(ent);
 
         _metaData.SetEntityName(ent, $"VIGIL CORE-{args.AiName}");
@@ -740,6 +856,20 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             case "ShowItems": ent.Comp.ShowItems = args.Value; break;
             case "ShowItemsDetail": ent.Comp.ShowItemsDetail = args.Value; break;
         }
+        Dirty(ent);
+        UpdateConfigUi(ent, refreshOnly: true);
+    }
+
+    private void OnSetItemMode(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetItemModeMessage args)
+    {
+        ent.Comp.ItemMode = args.Mode;
+        Dirty(ent);
+        UpdateConfigUi(ent, refreshOnly: true);
+    }
+
+    private void OnSetEnabled(Entity<CoyoteAICoreComponent> ent, ref CoyoteAISetEnabledMessage args)
+    {
+        ent.Comp.Enabled = args.Enabled;
         Dirty(ent);
         UpdateConfigUi(ent, refreshOnly: true);
     }
@@ -802,7 +932,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                 var userPrompt = batch.Count == 1
                     ? _promptBuilder.BuildUserPrompt(history, batch[0], shiftDuration, null)
                     : _promptBuilder.BuildBatchPrompt(history, batch, shiftDuration);
-                var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, GetTimeSinceLastResponse(coreId), out _);
+                var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, GetTimeSinceLastResponse(coreId), GetCurrentVesselName((uid, core)), out _);
 
                 _busyCores.Add(coreId);
                 _pendingRequests.Enqueue(new PendingRequest
@@ -840,27 +970,47 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
         var swiperName = idComp.FullName;
 
+        // AI-locked: ID card swipe does nothing — only core_unlock from the AI can unlock
+        if (ent.Comp.AiLocked)
+            return;
+
         if (!ent.Comp.IsClaimed)
         {
             ent.Comp.OwnerId = swiperName;
             ent.Comp.OwnerName = swiperName;
             ent.Comp.IsLocked = false;
+            ent.Comp.AiLocked = false;
+            AddOwnershipRecord(ent, swiperName);
             Dirty(ent);
             UpdateOwnerDescription(ent);
             UpdateConfigUi(ent);
             return;
         }
 
-        if (ent.Comp.IsLocked && ent.Comp.OwnerName != swiperName)
-            return;
+        // Same owner — toggle lock
+        ent.Comp.IsLocked = !ent.Comp.IsLocked;
+        if (!ent.Comp.IsLocked)
+            ent.Comp.AiLocked = false;
+        Dirty(ent);
+        UpdateOwnerDescription(ent);
+        UpdateConfigUi(ent);
+    }
 
-        if (ent.Comp.OwnerName == swiperName)
+    private void AddOwnershipRecord(Entity<CoyoteAICoreComponent> ent, string ownerName)
+    {
+        var now = FormatTime(_timing.CurTime);
+        // Close any active record
+        foreach (var r in ent.Comp.OwnershipHistory)
         {
-            ent.Comp.IsLocked = !ent.Comp.IsLocked;
-            Dirty(ent);
-            UpdateOwnerDescription(ent);
-            UpdateConfigUi(ent);
+            if (r.UnclaimedAt == null)
+                r.UnclaimedAt = now;
         }
+        ent.Comp.OwnershipHistory.Add(new OwnershipRecord
+        {
+            OwnerName = ownerName,
+            ClaimedAt = now,
+            UnclaimedAt = null
+        });
     }
 
     private void UpdateOwnerDescription(Entity<CoyoteAICoreComponent> ent)
@@ -869,9 +1019,36 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         if (ent.Comp.IsClaimed)
         {
             desc += $"\n\nRegistered to: {ent.Comp.OwnerName}";
-            desc += $"\nStatus: {(ent.Comp.IsLocked ? "Locked" : "Unlocked")}";
+            var lockStatus = ent.Comp.AiLocked ? "AI-Locked" : ent.Comp.IsLocked ? "Locked" : "Unlocked";
+            desc += $"\nStatus: {lockStatus}";
         }
         _metaData.SetEntityDescription(ent, desc);
+    }
+
+    private string GetCurrentVesselName(Entity<CoyoteAICoreComponent> ent)
+    {
+        if (!TryComp<TransformComponent>(ent, out var xform))
+            return "Unknown";
+
+        if (xform.GridUid is not { Valid: true } gridUid)
+            return "Deep Space";
+
+        // Try shipyard deed first (NF)
+        if (TryComp<ShuttleDeedComponent>(gridUid, out var deed))
+        {
+            var fullName = deed.ShuttleName ?? "Unknown";
+            if (!string.IsNullOrEmpty(deed.ShuttleNameSuffix))
+                fullName += " " + deed.ShuttleNameSuffix;
+            return fullName;
+        }
+
+        // Try station name
+        var station = _stationSystem.GetOwningStation(gridUid);
+        if (station is { Valid: true })
+            return Name(station.Value);
+
+        // Fallback to grid name
+        return Name(gridUid);
     }
 
     private void OnBuiAttempt(Entity<CoyoteAICoreComponent> ent, ref BoundUserInterfaceMessageAttempt args)
@@ -881,7 +1058,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             if (!ent.Comp.IsClaimed || !HasOwnerIdCard(args.Actor, ent.Comp.OwnerName))
                 args.Cancel();
         }
-        if (args.Message is CoyoteAIUnclaimMessage && ent.Comp.IsLocked)
+        if (args.Message is CoyoteAIUnclaimMessage && ent.Comp.IsLocked && !ent.Comp.AiLocked)
+            args.Cancel();
+        if (args.Message is CoyoteAIToggleLockMessage && ent.Comp.AiLocked)
             args.Cancel();
     }
 
@@ -896,10 +1075,17 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
     private void OnUnclaim(Entity<CoyoteAICoreComponent> ent, ref CoyoteAIUnclaimMessage args)
     {
-        if (ent.Comp.IsLocked) return;
+        if (ent.Comp.IsLocked && !ent.Comp.AiLocked) return;
+        var now = FormatTime(_timing.CurTime);
+        foreach (var r in ent.Comp.OwnershipHistory)
+        {
+            if (r.UnclaimedAt == null)
+                r.UnclaimedAt = now;
+        }
         ent.Comp.OwnerId = string.Empty;
         ent.Comp.OwnerName = string.Empty;
         ent.Comp.IsLocked = false;
+        ent.Comp.AiLocked = false;
         Dirty(ent);
         UpdateOwnerDescription(ent);
         UpdateConfigUi(ent);
@@ -973,7 +1159,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
         var lawBlock = BuildLawBlock(ent.Comp.LawSet);
         var visionBlock = BuildVisionBlock(ent.Owner, ent.Comp);
-        var systemPrompt = _promptBuilder.BuildSystemPrompt(ent.Comp, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, "N/A", out var counts);
+        var systemPrompt = _promptBuilder.BuildSystemPrompt(ent.Comp, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, "N/A", GetCurrentVesselName(ent), out var counts);
         var totalEstimatedTokens = (systemPrompt.Length + totalChars) / 4;
 
         var state = new CoyoteAIConfigBuiState(
@@ -996,12 +1182,13 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             ownerName: ent.Comp.OwnerName,
             isLocked: ent.Comp.IsLocked,
             isClaimed: ent.Comp.IsClaimed,
-            lockedView: ent.Comp.IsLocked && ent.Comp.IsClaimed,
+            lockedView: (ent.Comp.IsLocked && ent.Comp.IsClaimed) || ent.Comp.AiLocked,
             showPeople: ent.Comp.ShowPeople,
             showMachines: ent.Comp.ShowMachines,
             showMachinesDetail: ent.Comp.ShowMachinesDetail,
             showItems: ent.Comp.ShowItems,
             showItemsDetail: ent.Comp.ShowItemsDetail,
+            itemMode: ent.Comp.ItemMode,
             visionRange: ent.Comp.VisionRange,
             tokenSystem: counts.System / 4,
             tokenPersonLore: counts.PersonLore / 4,
@@ -1014,7 +1201,16 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             cooldownMax: ent.Comp.CooldownMax,
             autoContinue: ent.Comp.AutoContinue,
             autoContinueThreshold: ent.Comp.AutoContinueThreshold,
-            autoContinueMax: ent.Comp.AutoContinueMax
+            autoContinueMax: ent.Comp.AutoContinueMax,
+            currentShipName: GetCurrentVesselName(ent),
+            originalShipName: ent.Comp.OriginalShipName,
+            constructionDate: ent.Comp.ConstructionDate,
+            loadCount: ent.Comp.LoadCount,
+            loadTimestampsDisplay: ent.Comp.LoadTimestamps.Count > 0
+                ? string.Join(", ", ent.Comp.LoadTimestamps.TakeLast(5)) : "",
+            ownershipHistory: ent.Comp.OwnershipHistory,
+            aiLocked: ent.Comp.AiLocked,
+            memories: ent.Comp.Memories
         );
         state.RefreshOnly = refreshOnly;
         _ui.SetUiState(ent.Owner, CoyoteAICoreUiKey.Config, state);
@@ -1268,8 +1464,9 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         {
             var machineData = new Dictionary<string, (int count, List<float> dists, Vector2 firstPos, string desc, bool powered)>();
 
-            var query = EntityQueryEnumerator<ActivatableUIComponent, TransformComponent, MetaDataComponent>();
-            while (query.MoveNext(out var uid, out var ui, out var xform, out var meta))
+            // Query 1: ActivatableUI entities (machines/computers)
+            var machineQuery = EntityQueryEnumerator<ActivatableUIComponent, TransformComponent, MetaDataComponent>();
+            while (machineQuery.MoveNext(out var uid, out var ui, out var xform, out var meta))
             {
                 if (uid == coreUid) continue;
                 if (HasComp<MobStateComponent>(uid) || HasComp<ItemComponent>(uid)) continue;
@@ -1292,10 +1489,10 @@ public sealed class CoyoteAICoreSystem : EntitySystem
                     machineData[name] = (0, new List<float>(), pos, desc, powered);
                 }
 
-                var entry = machineData[name];
-                entry.count++;
-                entry.dists.Add(dist);
-                machineData[name] = entry;
+                var machineEntry = machineData[name];
+                machineEntry.count++;
+                machineEntry.dists.Add(dist);
+                machineData[name] = machineEntry;
             }
 
             foreach (var (name, (count, dists, firstPos, desc, powered)) in machineData)
@@ -1324,75 +1521,96 @@ public sealed class CoyoteAICoreSystem : EntitySystem
 
         if (core.ShowItems)
         {
-            var itemData = new Dictionary<string, (int count, List<float> dists, Vector2 firstPos, string desc, int contraband, int stackAmount)>();
-
-            var query = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
-            while (query.MoveNext(out var uid, out var item, out var xform, out var meta))
+            if (core.ItemMode == ItemVisionMode.FeedAll)
             {
-                if (string.IsNullOrEmpty(meta.EntityName)) continue;
-
-                var pos = _xforms.GetWorldPosition(xform);
-                var dist = (pos - corePos).Length();
-                if (dist > range) continue;
-                if (IsOrganItem(meta.EntityName)) continue;
-                if (TryComp<VisibilityComponent>(uid, out var iVis) && (iVis.Layer & coreVisMask) == 0)
-                    continue;
-                if (!_examine.InRangeUnOccluded(coreUid, uid, range))
-                    continue;
-
-                var name = meta.EntityName;
-
-                if (!itemData.ContainsKey(name))
+                // Feed All mode: full details for every item (current behavior)
+                var itemData = new Dictionary<string, (int count, List<float> dists, Vector2 firstPos, string desc, int contraband, int stackAmount)>();
+                var query = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
+                while (query.MoveNext(out var uid, out var item, out var xform, out var meta))
                 {
-                    var desc = meta.EntityDescription ?? "";
-                    var contraband = GetContrabandLevel(uid, desc);
-                    var amount = TryComp<StackComponent>(uid, out var stack) ? stack.Count : 1;
-                    itemData[name] = (0, new List<float>(), pos, desc, contraband, amount);
-                }
+                    if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                    var pos = _xforms.GetWorldPosition(xform);
+                    var dist = (pos - corePos).Length();
+                    if (dist > range) continue;
+                    if (IsOrganItem(meta.EntityName)) continue;
+                    if (TryComp<VisibilityComponent>(uid, out var iVis) && (iVis.Layer & coreVisMask) == 0) continue;
+                    if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
 
-                var entry = itemData[name];
-                entry.count++;
-                entry.dists.Add(dist);
-                itemData[name] = entry;
-            }
-
-            foreach (var (name, (count, dists, firstPos, desc, contraband, stackAmount)) in itemData)
-            {
-                var sortedDists = dists.Distinct().OrderBy(d => d).ToList();
-                var distStr = string.Join(", ", sortedDists.Select(d => $"{d:F0}m"));
-                var countStr = count > 1 ? $" ×{count}" : "";
-
-                if (core.ShowItemsDetail)
-                {
-                    var itemDetails = new List<string>();
-                    var header = $"[ITEM] {name}{countStr} | at {distStr}";
-                    if (count == 1)
+                    var name = meta.EntityName;
+                    if (!itemData.ContainsKey(name))
                     {
-                        var dir = GetDirection(corePos, firstPos);
-                        header += $" [{dir}]";
+                        var desc = meta.EntityDescription ?? "";
+                        var contraband = GetContrabandLevel(uid, desc);
+                        var amount = TryComp<StackComponent>(uid, out var stack) ? stack.Count : 1;
+                        itemData[name] = (0, new List<float>(), pos, desc, contraband, amount);
                     }
-                    itemDetails.Add(header);
-                    if (!string.IsNullOrEmpty(desc))
-                        itemDetails.Add($"  desc: \"{desc}\"");
-                    itemDetails.Add($"  legality: {contraband}");
-                    if (stackAmount > 1)
-                        itemDetails.Add($"  amount: {stackAmount}");
-                    itemEntries.Add(string.Join("\n", itemDetails));
+                    var entry = itemData[name];
+                    entry.count++;
+                    entry.dists.Add(dist);
+                    itemData[name] = entry;
                 }
-                else
+
+                foreach (var (name, (count, dists, firstPos, desc, contraband, stackAmount)) in itemData)
                 {
-                    itemEntries.Add($"[ITEM] {name}{countStr} | at {distStr}");
+                    var sortedDists = dists.Distinct().OrderBy(d => d).ToList();
+                    var distStr = string.Join(", ", sortedDists.Select(d => $"{d:F0}m"));
+                    var countStr = count > 1 ? $" ×{count}" : "";
+                    if (core.ShowItemsDetail)
+                    {
+                        var itemDetails = new List<string>();
+                        var header = $"[ITEM] {name}{countStr} | at {distStr}";
+                        if (count == 1) { var dir = GetDirection(corePos, firstPos); header += $" [{dir}]"; }
+                        itemDetails.Add(header);
+                        if (!string.IsNullOrEmpty(desc)) itemDetails.Add($"  desc: \"{desc}\"");
+                        itemDetails.Add($"  legality: {contraband}");
+                        if (stackAmount > 1) itemDetails.Add($"  amount: {stackAmount}");
+                        itemEntries.Add(string.Join("\n", itemDetails));
+                    }
+                    else
+                        itemEntries.Add($"[ITEM] {name}{countStr} | at {distStr}");
                 }
             }
+            else if (core.ItemMode == ItemVisionMode.SmartSummary)
+            {
+                // Smart Summary: compact counts
+                var itemCount = 0;
+                var itemGroups = new Dictionary<string, int>();
+                var query = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
+                while (query.MoveNext(out var uid, out var item, out var xform, out var meta))
+                {
+                    if (string.IsNullOrEmpty(meta.EntityName)) continue;
+                    var pos = _xforms.GetWorldPosition(xform);
+                    var dist = (pos - corePos).Length();
+                    if (dist > range) continue;
+                    if (IsOrganItem(meta.EntityName)) continue;
+                    if (TryComp<VisibilityComponent>(uid, out var iVis) && (iVis.Layer & coreVisMask) == 0) continue;
+                    if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
+
+                    itemCount++;
+                    if (!itemGroups.ContainsKey(meta.EntityName))
+                        itemGroups[meta.EntityName] = 0;
+                    itemGroups[meta.EntityName]++;
+                }
+
+                if (itemCount > 0)
+                {
+                    var summary = string.Join(", ", itemGroups.OrderByDescending(g => g.Value).Select(g => $"{g.Key} \u00d7{g.Value}"));
+                    itemEntries.Add($"── ITEMS (Smart Summary) ──");
+                    itemEntries.Add($"{itemCount} items: {summary}");
+                    itemEntries.Add("Use {\"query_entity\": \"item name\"} for full details.");
+                }
+            }
+            // Search Engine mode: show nothing, AI uses search_entity
         }
 
+        // Combine sections
         var sections = new List<string>();
         if (mobEntries.Count > 0)
             sections.Add("── CREW/MOBS ──\n" + string.Join("\n---\n", mobEntries));
         if (machineEntries.Count > 0)
             sections.Add("── MACHINES/COMPUTERS ──\n" + string.Join("\n---\n", machineEntries));
         if (itemEntries.Count > 0)
-            sections.Add("── ITEMS ──\n" + string.Join("\n---\n", itemEntries));
+            sections.Add(string.Join("\n", itemEntries));
         if (sections.Count == 0) return string.Empty;
         return "── NEARBY ──\n" + string.Join("\n\n", sections) + "\n";
     }
@@ -1570,6 +1788,374 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         _rateLimiter.Reset(coreId);
     }
 
+    // ── New helper methods ──
+
+    private EntityUid? FindEntityByName(EntityUid coreUid, string targetName, float visionRange)
+    {
+        if (!TryComp<TransformComponent>(coreUid, out var coreXform))
+            return null;
+        var corePos = _xforms.GetWorldPosition(coreXform);
+        var coreVisMask = (int)VisibilityFlags.Normal;
+        if (TryComp<EyeComponent>(coreUid, out var eye))
+            coreVisMask = eye.VisibilityMask;
+        EntityUid? best = null;
+        var bestDist = float.MaxValue;
+        var query = EntityQueryEnumerator<TransformComponent, MetaDataComponent>();
+        while (query.MoveNext(out var uid, out var xform, out var meta))
+        {
+            if (uid == coreUid) continue;
+            if (string.IsNullOrEmpty(meta.EntityName)) continue;
+            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase))
+                continue;
+            if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0)
+                continue;
+            var pos = _xforms.GetWorldPosition(xform);
+            var dist = (pos - corePos).Length();
+            if (dist > visionRange) continue;
+            if (!_examine.InRangeUnOccluded(coreUid, uid, visionRange))
+                continue;
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = uid;
+            }
+        }
+        return best;
+    }
+
+    private void PruneMemories(CoyoteAICoreComponent core)
+    {
+        if (core.Memories.Count <= 100)
+            return;
+        core.Memories.Sort((a, b) => a.Priority.CompareTo(b.Priority));
+        core.Memories.RemoveRange(100, core.Memories.Count - 100);
+    }
+
+    // ── Export / Import ──
+
+    private void OnExportRequest(Entity<CoyoteAICoreComponent> ent, ref CoyoteAIExportMessage args)
+    {
+        var history = _histories.TryGetValue(ent.Comp.CoreId, out var h) ? h.ToList() : new();
+        var export = new AICoreExportData
+        {
+            Version = 1,
+            CoreId = ent.Comp.CoreId,
+            AiName = ent.Comp.AiName,
+            PersonalityPrompt = ent.Comp.PersonalityPrompt,
+            LoreNotes = ent.Comp.LoreNotes,
+            Temperature = ent.Comp.Temperature,
+            ReasoningLevel = ent.Comp.ReasoningLevel,
+            LawSet = ent.Comp.LawSet,
+            Enabled = ent.Comp.Enabled,
+            MaxHistoryLength = ent.Comp.MaxHistoryLength,
+            MaxTokens = ent.Comp.MaxTokens,
+            ShowPeople = ent.Comp.ShowPeople,
+            ShowMachines = ent.Comp.ShowMachines,
+            ShowMachinesDetail = ent.Comp.ShowMachinesDetail,
+            ShowItems = ent.Comp.ShowItems,
+            ShowItemsDetail = ent.Comp.ShowItemsDetail,
+            VisionRange = ent.Comp.VisionRange,
+            CooldownBase = ent.Comp.CooldownBase,
+            CooldownCharFactor = ent.Comp.CooldownCharFactor,
+            CooldownMax = ent.Comp.CooldownMax,
+            AutoContinue = ent.Comp.AutoContinue,
+            AutoContinueThreshold = ent.Comp.AutoContinueThreshold,
+            AutoContinueMax = ent.Comp.AutoContinueMax,
+            LoadCount = ent.Comp.LoadCount,
+            LoadTimestamps = new(ent.Comp.LoadTimestamps),
+            OriginalShipName = ent.Comp.OriginalShipName,
+            ConstructionDate = ent.Comp.ConstructionDate,
+            OwnershipHistory = new(ent.Comp.OwnershipHistory),
+            ConversationHistory = history,
+            Memories = new(ent.Comp.Memories),
+        };
+        var json = System.Text.Json.JsonSerializer.Serialize(export, new System.Text.Json.JsonSerializerOptions { WriteIndented = true, IncludeFields = true });
+        RaiseNetworkEvent(new CoyoteAIExportResponseEvent { Yaml = json }, args.Actor);
+    }
+
+    private void OnImport(Entity<CoyoteAICoreComponent> ent, ref CoyoteAIImportMessage args)
+    {
+        if (string.IsNullOrEmpty(args.DataJson)) return;
+        AICoreExportData? data = null;
+        try { data = System.Text.Json.JsonSerializer.Deserialize<AICoreExportData>(args.DataJson, new System.Text.Json.JsonSerializerOptions { IncludeFields = true }); } catch { return; }
+        if (data == null) return;
+        if (data.Version < 1) return;
+
+        ent.Comp.CoreId = data.CoreId;
+        ent.Comp.AiName = data.AiName;
+        ent.Comp.PersonalityPrompt = data.PersonalityPrompt;
+        ent.Comp.LoreNotes = data.LoreNotes;
+        ent.Comp.Temperature = Math.Clamp(data.Temperature, 0.1f, 2.0f);
+        ent.Comp.ReasoningLevel = data.ReasoningLevel;
+        ent.Comp.LawSet = data.LawSet;
+        ent.Comp.Enabled = data.Enabled;
+        ent.Comp.MaxHistoryLength = Math.Clamp(data.MaxHistoryLength, 5, 1000);
+        ent.Comp.MaxTokens = Math.Max(data.MaxTokens, 1);
+        ent.Comp.ShowPeople = data.ShowPeople;
+        ent.Comp.ShowMachines = data.ShowMachines;
+        ent.Comp.ShowMachinesDetail = data.ShowMachinesDetail;
+        ent.Comp.ShowItems = data.ShowItems;
+        ent.Comp.ShowItemsDetail = data.ShowItemsDetail;
+        ent.Comp.VisionRange = Math.Clamp(data.VisionRange, 1f, 15f);
+        ent.Comp.CooldownBase = Math.Clamp(data.CooldownBase, 0.1f, 10f);
+        ent.Comp.CooldownCharFactor = Math.Clamp(data.CooldownCharFactor, 0.001f, 0.5f);
+        ent.Comp.CooldownMax = Math.Clamp(data.CooldownMax, 0.1f, 10f);
+        ent.Comp.AutoContinue = data.AutoContinue;
+        ent.Comp.AutoContinueThreshold = Math.Max(data.AutoContinueThreshold, 50);
+        ent.Comp.AutoContinueMax = Math.Clamp(data.AutoContinueMax, 1, 10);
+        ent.Comp.LoadCount = data.LoadCount;
+        ent.Comp.LoadTimestamps = new(data.LoadTimestamps);
+        ent.Comp.OriginalShipName = data.OriginalShipName;
+        ent.Comp.ConstructionDate = data.ConstructionDate;
+        ent.Comp.OwnershipHistory = new(data.OwnershipHistory);
+        ent.Comp.Memories = new(data.Memories);
+
+        _histories[ent.Comp.CoreId] = new Queue<ChatEntry>(data.ConversationHistory);
+
+        _metaData.SetEntityName(ent, $"VIGIL CORE-{data.AiName}");
+        Dirty(ent);
+        UpdateConfigUi(ent);
+        Log.Info($"CoyoteAI: Imported AI '{data.AiName}' (core {data.CoreId}) with {data.ConversationHistory.Count} history entries");
+    }
+
+    // ── Memory CRUD ──
+
+    private void OnAddMemory(Entity<CoyoteAICoreComponent> ent, ref CoyoteAIAddMemoryMessage args)
+    {
+        ent.Comp.Memories.Add(new AICoreMemory
+        {
+            Id = Guid.NewGuid().ToString(),
+            Content = args.Content,
+            Priority = args.Priority,
+            Tags = new(args.Tags),
+            CreatedAt = FormatTime(_timing.CurTime),
+            LastAccessedAt = FormatTime(_timing.CurTime)
+        });
+        PruneMemories(ent.Comp);
+        Dirty(ent);
+        UpdateConfigUi(ent);
+    }
+
+    private void OnRemoveMemory(Entity<CoyoteAICoreComponent> ent, ref CoyoteAIRemoveMemoryMessage args)
+    {
+        var removeId = args.MemoryId;
+        ent.Comp.Memories.RemoveAll(m => m.Id == removeId);
+        Dirty(ent);
+        UpdateConfigUi(ent);
+    }
+
+    // ── Vision query/search handlers in InjectResponse ──
+
+    private bool HandleVisionQuery(PendingResponse response, CoyoteAICoreComponent core)
+    {
+        var resp = response.Response;
+        if (resp == null) return false;
+        var handled = false;
+        string? injectMessage = null;
+
+        // query_entity — Smart Summary mode: get full details of one entity
+        if (!string.IsNullOrEmpty(resp.QueryEntity) && core.ItemMode == ItemVisionMode.SmartSummary)
+        {
+            var detail = BuildEntityDetailBlock(response.CoreUid, resp.QueryEntity, core);
+            injectMessage = $"── QUERY: {resp.QueryEntity} ──\n{detail}";
+            handled = true;
+        }
+
+        // search_entity — Search Engine mode: search by name
+        if (!string.IsNullOrEmpty(resp.SearchEntity) && core.ItemMode == ItemVisionMode.SearchEngine)
+        {
+            var results = SearchEntities(response.CoreUid, resp.SearchEntity, core);
+            if (results.Count == 1)
+            {
+                var detail = BuildEntityDetailBlock(response.CoreUid, results[0].DisplayName, core);
+                injectMessage = $"── SEARCH: {resp.SearchEntity} ──\n{detail}";
+                _searchResults.Remove(response.CoreId);
+            }
+            else
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"── SEARCH: {resp.SearchEntity} ──");
+                sb.AppendLine($"Found {results.Count} matches:");
+                for (int i = 0; i < results.Count; i++)
+                {
+                    var r = results[i];
+                    var dir = GetDirection(Transform(response.CoreUid).WorldPosition, r.Position);
+                    sb.AppendLine($"  [S{i}] {r.DisplayName} | at {(r.Position - Transform(response.CoreUid).WorldPosition).Length():F0}m [{dir}] | ({(int)r.Position.X}, {(int)r.Position.Y})");
+                }
+                sb.AppendLine($"Select one with {{\"select_entity\": \"S0\"}}");
+                _searchResults[response.CoreId] = results;
+                injectMessage = sb.ToString();
+            }
+            handled = true;
+        }
+
+        // select_entity — Search Engine mode: pick from search results
+        if (!string.IsNullOrEmpty(resp.SelectEntity) && core.ItemMode == ItemVisionMode.SearchEngine)
+        {
+            if (_searchResults.TryGetValue(response.CoreId, out var results))
+            {
+                var prefix = "S";
+                if (resp.SelectEntity.StartsWith(prefix) && int.TryParse(resp.SelectEntity.AsSpan(1), out var idx) && idx >= 0 && idx < results.Count)
+                {
+                    var selected = results[idx];
+                    var detail = BuildEntityDetailBlock(response.CoreUid, selected.DisplayName, core);
+                    injectMessage = $"── SELECTED: {selected.DisplayName} ──\n{detail}";
+                }
+                _searchResults.Remove(response.CoreId);
+            }
+            handled = true;
+        }
+
+        if (!handled || injectMessage == null)
+            return false;
+
+        // Inject the vision query result into conversation history and trigger a follow-up
+        _busyCores.Remove(response.CoreId);
+
+        if (_histories.TryGetValue(response.CoreId, out var history))
+        {
+            var queryEntry = new ChatEntry
+            {
+                Type = "vision",
+                SpeakerName = "System",
+                SpeakerSpecies = "",
+                SpeakerJob = "",
+                SpeakerAge = 0,
+                Message = injectMessage,
+                Timestamp = _timing.CurTime
+            };
+            history.Enqueue(queryEntry);
+        }
+
+        var shiftDuration = FormatTime(_timing.CurTime);
+        var manifest = _manifest.GetCrewManifest();
+        var speciesIds = _manifest.GetSpeciesOnStation();
+        var speciesLoreBlock = _speciesLore.BuildLoreBlock(speciesIds);
+        var lawBlock = BuildLawBlock(core.LawSet);
+        var visionBlock = BuildVisionBlock(response.CoreUid, core);
+        var systemPrompt = _promptBuilder.BuildSystemPrompt(core, manifest, speciesLoreBlock, lawBlock, visionBlock, shiftDuration, GetTimeSinceLastResponse(response.CoreId), GetCurrentVesselName((response.CoreUid, core)), out _);
+        var followupHistory = _histories.TryGetValue(response.CoreId, out var h) ? new Queue<ChatEntry>(h) : new Queue<ChatEntry>();
+        var followupTrigger = new ChatEntry
+        {
+            Type = "followup",
+            SpeakerName = "System",
+            SpeakerSpecies = "",
+            SpeakerJob = "",
+            SpeakerAge = 0,
+            Message = "Vision query result provided above. You may respond now.",
+            Timestamp = _timing.CurTime
+        };
+        followupHistory.Enqueue(followupTrigger);
+        _busyCores.Add(response.CoreId);
+        var followupUserPrompt = _promptBuilder.BuildUserPrompt(followupHistory, followupTrigger, shiftDuration, null);
+        _pendingRequests.Enqueue(new PendingRequest
+        {
+            CoreUid = response.CoreUid,
+            Core = core,
+            SystemPrompt = systemPrompt,
+            UserPrompt = followupUserPrompt
+        });
+
+        Log.Debug($"CoyoteAI: Vision query handled for core {response.CoreId}: {injectMessage[..Math.Min(injectMessage.Length, 80)]}");
+        return true;
+    }
+
+    private string BuildEntityDetailBlock(EntityUid coreUid, string targetName, CoyoteAICoreComponent core)
+    {
+        var coreVisMask = (int)VisibilityFlags.Normal;
+        if (TryComp<EyeComponent>(coreUid, out var eye))
+            coreVisMask = eye.VisibilityMask;
+        var corePos = Transform(coreUid).WorldPosition;
+        var range = core.VisionRange;
+
+        // Check mobs
+        var mobQuery = EntityQueryEnumerator<MobStateComponent, TransformComponent, MetaDataComponent>();
+        while (mobQuery.MoveNext(out var uid, out var mobState, out var xform, out var meta))
+        {
+            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase)) continue;
+            if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0) continue;
+            var pos = xform.WorldPosition;
+            var dist = (pos - corePos).Length();
+            if (dist > range) continue;
+            if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
+
+            var dir = GetDirection(corePos, pos);
+            var species = TryComp<HumanoidAppearanceComponent>(uid, out var humanoid) ? humanoid.Species.ToString() : "Unknown";
+            var job = "";
+            if (_mind.TryGetMind(uid, out var mindId, out var mindComp) && _roles.MindHasRole<JobRoleComponent>((mindId, mindComp), out var role) && role.Value.Comp1.JobPrototype.HasValue)
+                job = _prototype.Index(role.Value.Comp1.JobPrototype.Value).LocalizedName;
+            var healthInfo = "";
+            if (TryComp<DamageableComponent>(uid, out var damageable))
+                healthInfo = damageable.TotalDamage == 0 ? "Undamaged" : $"Damaged ({damageable.TotalDamage} total)";
+
+            return $"[CREW] {meta.EntityName} | {species} | {job} | at {dist:F0}m [{dir}] | health: {mobState.CurrentState} | {healthInfo} | ({(int)pos.X}, {(int)pos.Y})";
+        }
+
+        // Check machines (ActivatableUI)
+        var machineQuery = EntityQueryEnumerator<ActivatableUIComponent, TransformComponent, MetaDataComponent>();
+        while (machineQuery.MoveNext(out var uid, out var ui, out var xform, out var meta))
+        {
+            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase)) continue;
+            if (HasComp<MobStateComponent>(uid) || HasComp<ItemComponent>(uid)) continue;
+            if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0) continue;
+            var pos = xform.WorldPosition;
+            var dist = (pos - corePos).Length();
+            if (dist > range) continue;
+            if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
+
+            var dir = GetDirection(corePos, pos);
+            var desc = meta.EntityDescription ?? "";
+            var powered = TryComp<ApcPowerReceiverComponent>(uid, out var apc) && apc.Powered;
+            return $"[MACHINE] {meta.EntityName} | at {dist:F0}m [{dir}] | desc: \"{desc}\" | powered: {(powered ? "yes" : "no")}";
+        }
+
+        // Check items
+        var itemQuery = EntityQueryEnumerator<ItemComponent, TransformComponent, MetaDataComponent>();
+        while (itemQuery.MoveNext(out var uid, out var item, out var xform, out var meta))
+        {
+            if (!meta.EntityName.Contains(targetName, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.IsNullOrEmpty(meta.EntityName) || IsOrganItem(meta.EntityName)) continue;
+            if (TryComp<VisibilityComponent>(uid, out var vis) && (vis.Layer & coreVisMask) == 0) continue;
+            var pos = xform.WorldPosition;
+            var dist = (pos - corePos).Length();
+            if (dist > range) continue;
+            if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
+
+            var dir = GetDirection(corePos, pos);
+            var desc = meta.EntityDescription ?? "";
+            var contraband = GetContrabandLevel(uid, desc);
+            var amount = TryComp<StackComponent>(uid, out var stack) ? stack.Count : 1;
+            var countStr = amount > 1 ? $" ×{amount}" : "";
+            return $"[ITEM] {meta.EntityName}{countStr} | at {dist:F0}m [{dir}] | desc: \"{desc}\" | legality: {contraband} | ({(int)pos.X}, {(int)pos.Y})";
+        }
+
+        return $"Entity '{targetName}' not found in range.";
+    }
+
+    private List<SearchResult> SearchEntities(EntityUid coreUid, string searchTerm, CoyoteAICoreComponent core)
+    {
+        var results = new List<SearchResult>();
+        var corePos = Transform(coreUid).WorldPosition;
+        var range = core.VisionRange;
+
+        var query = EntityQueryEnumerator<MetaDataComponent, TransformComponent>();
+        while (query.MoveNext(out var uid, out var meta, out var xform))
+        {
+            if (uid == coreUid) continue;
+            if (string.IsNullOrEmpty(meta.EntityName)) continue;
+            if (!meta.EntityName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) continue;
+
+            var pos = xform.WorldPosition;
+            var dist = (pos - corePos).Length();
+            if (dist > range) continue;
+            if (!_examine.InRangeUnOccluded(coreUid, uid, range)) continue;
+
+            results.Add(new SearchResult { Entity = uid, DisplayName = meta.EntityName, Position = pos });
+        }
+
+        return results;
+    }
+
     private sealed class PendingRequest
     {
         public EntityUid CoreUid;
@@ -1586,5 +2172,12 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         public string SystemPrompt = string.Empty;
         public string UserPrompt = string.Empty;
         public LLMResponse? Response;
+    }
+
+    private sealed class SearchResult
+    {
+        public EntityUid Entity;
+        public string DisplayName = string.Empty;
+        public Vector2 Position;
     }
 }

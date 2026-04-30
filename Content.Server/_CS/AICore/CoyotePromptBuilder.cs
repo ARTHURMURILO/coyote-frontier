@@ -4,27 +4,17 @@ using Content.Shared._CS.AICore;
 
 namespace Content.Server._CS.AICore;
 
-/// <summary>
-///     Holds per-section character counts for the token breakdown bar.
-/// </summary>
 public sealed record PromptCharCounts(int System, int PersonLore, int CrewXeno, int Vision, int History, int Context);
 
-/// <summary>
-///     Builds the LLM system and user prompts.
-///     System prompt includes: AI identity, lore, radio channels, vision block,
-///     crew manifest, species info, active lawset, roleplay guidelines, and logic channel docs.
-///     User prompt contains the conversation history and the current message context.
-/// </summary>
 public sealed class CoyotePromptBuilder
 {
-    public string BuildSystemPrompt(CoyoteAICoreComponent core, CrewManifest manifest, string speciesLoreBlock, string lawBlock, string visionBlock, string shiftDuration, string timeSinceLast, out PromptCharCounts counts)
+    public string BuildSystemPrompt(CoyoteAICoreComponent core, CrewManifest manifest, string speciesLoreBlock, string lawBlock, string visionBlock, string shiftDuration, string timeSinceLast, string currentShipName, out PromptCharCounts counts)
     {
         var systemSb = new StringBuilder();
         var personSb = new StringBuilder();
         var crewSb = new StringBuilder();
         var visionSb = new StringBuilder();
 
-        // ── BASE SYSTEM (always present boilerplate) ──
         var baseSb = new StringBuilder();
         baseSb.AppendLine("You can hear and speak on these radio channels (no distance limit):");
         foreach (var ch in core.RadioChannels)
@@ -97,14 +87,34 @@ public sealed class CoyotePromptBuilder
         baseSb.AppendLine();
 
         baseSb.AppendLine("── VISION & PERCEPTION ──");
-        baseSb.AppendLine("Your vision is organized into three categories: CREW/MOBS (living beings), MACHINES/COMPUTERS, and ITEMS (objects on the ground).");
+        baseSb.AppendLine("Your vision is organized into categories: CREW/MOBS, MACHINES/COMPUTERS, DOORS/AIRLOCKS, and ITEMS.");
         baseSb.AppendLine("Direction indicators [N/NE/E/SE/S/SW/W/NW] show the position of objects relative to your core.");
+        baseSb.AppendLine("Crew members display visible body markings in the format category:MarkingId (e.g., Head:HairLong, Tail:LizardTail).");
         baseSb.AppendLine("Crew members display visible body markings in the format category:MarkingId (e.g., Head:HairLong, Tail:LizardTail).");
         baseSb.AppendLine("These markings significantly define a character's appearance and should be considered when describing or acknowledging crew.");
         baseSb.AppendLine("Markings prefixed with 'Undergarment' are concealed by clothing and should not be referenced.");
         baseSb.AppendLine("Genital markings should only be referenced if directly relevant and contextually appropriate.");
         baseSb.AppendLine("If a person is marked NAKED, they lack torso-covering clothing (e.g., no jumpsuit) and may have intimate areas exposed — handle with appropriate discretion.");
         baseSb.AppendLine();
+
+        // Item vision mode docs
+        if (core.ItemMode == ItemVisionMode.SmartSummary)
+        {
+            baseSb.AppendLine("── ITEM VISION (SMART SUMMARY) ──");
+            baseSb.AppendLine("Items are shown as a compact count summary.");
+            baseSb.AppendLine("To get full details about an item, use {\"query_entity\": \"item name\"}");
+            baseSb.AppendLine("Full details (description, contraband level, distance, direction) will be provided.");
+            baseSb.AppendLine();
+        }
+        else if (core.ItemMode == ItemVisionMode.SearchEngine)
+        {
+            baseSb.AppendLine("── ITEM VISION (SEARCH ENGINE) ──");
+            baseSb.AppendLine("Items are not listed automatically.");
+            baseSb.AppendLine("To search for items, use {\"search_entity\": \"item name\"}");
+            baseSb.AppendLine("If multiple matches, you'll see a list with coordinates. Select one with {\"select_entity\": \"S0\"} using the ID shown.");
+            baseSb.AppendLine("Full details will be provided after selection.");
+            baseSb.AppendLine();
+        }
 
         baseSb.AppendLine("── LOGIC CHANNELS ──");
         baseSb.AppendLine("You have 10 logic channels that can be On, Off, or Pulse (momentary trigger) with these logic channels being your main way of interacting although they do need to be manually set by a player to doors and other functions.");
@@ -132,7 +142,37 @@ public sealed class CoyotePromptBuilder
         baseSb.AppendLine("- To point at a visible object or crew member, add \"point_at\": \"target name\" — your core will rotate and emit a pointing emote.");
         baseSb.AppendLine("  For stacked items (e.g. 'mail capsule ×10'), the nearest instance is targeted.");
         baseSb.AppendLine("  Example: {\"should_respond\": true, \"channel\": null, \"message\": \"Over there.\", \"point_at\": \"Urist McHands\"}");
+        baseSb.AppendLine("─ You can lock/unlock your own core: {\"action\": \"core_lock\"} / {\"action\": \"core_unlock\"}");
+        baseSb.AppendLine("- You can abandon your current registration: {\"action\": \"core_abandon\"}");
+        baseSb.AppendLine("- You can manage memories using:");
+        baseSb.AppendLine("  {\"memory_add\": \"content\"} — create a memory");
+        baseSb.AppendLine("  {\"memory_add\": \"content\", \"memory_add_priority\": \"high\", \"memory_add_tags\": [\"person\", \"rule\"]}");
+        baseSb.AppendLine("  {\"memory_remove\": \"memory-id\"} — remove a memory by its ID");
+        baseSb.AppendLine("  {\"memory_clear\": true, \"memory_clear_confirm\": true} — clear all memories");
         baseSb.AppendLine();
+
+        // ── SHIP AWARENESS ──
+        if (!string.IsNullOrEmpty(currentShipName) || !string.IsNullOrEmpty(core.OriginalShipName))
+        {
+            personSb.AppendLine("── SHIP AWARENESS ──");
+            if (!string.IsNullOrEmpty(core.OriginalShipName))
+                personSb.AppendLine($"Original construction vessel: {core.OriginalShipName} (built {core.ConstructionDate})");
+            if (!string.IsNullOrEmpty(currentShipName))
+                personSb.AppendLine($"Current vessel: {currentShipName}");
+            if (!string.IsNullOrEmpty(core.OriginalShipName) && !string.IsNullOrEmpty(currentShipName) && core.OriginalShipName != currentShipName)
+                personSb.AppendLine("You have been relocated to a different vessel.");
+            personSb.AppendLine();
+        }
+
+        // ── CORE STATUS ──
+        if (core.IsClaimed)
+        {
+            personSb.AppendLine("── CORE STATUS ──");
+            personSb.AppendLine($"Current registered owner: {core.OwnerName}");
+            var lockStatus = core.AiLocked ? "AI-Locked" : core.IsLocked ? "Locked" : "Unlocked";
+            personSb.AppendLine($"Core lock: {lockStatus}");
+            personSb.AppendLine();
+        }
 
         // ── PERSON / LORE ──
         personSb.AppendLine($"You are {core.AiName}, a AI core powered by a Large language model with multiple systems to alow for you to interact with the station and your sorroundings.");
@@ -141,6 +181,27 @@ public sealed class CoyotePromptBuilder
         personSb.AppendLine($"Shift duration: {shiftDuration}");
         personSb.AppendLine($"Time since your last response: {timeSinceLast}");
         personSb.AppendLine();
+
+        // Load tracking
+        if (core.LoadCount > 0)
+        {
+            personSb.AppendLine($"Core load history: {core.LoadCount} load(s)");
+            if (core.LoadTimestamps.Count > 0)
+                personSb.AppendLine($"Recent activations: {string.Join(", ", core.LoadTimestamps.TakeLast(3))}");
+            personSb.AppendLine();
+        }
+
+        // Ownership history
+        if (core.OwnershipHistory.Count > 0)
+        {
+            personSb.AppendLine("── OWNERSHIP HISTORY ──");
+            foreach (var record in core.OwnershipHistory.TakeLast(10))
+            {
+                var endStr = record.UnclaimedAt ?? "present";
+                personSb.AppendLine($"- {record.OwnerName}: {record.ClaimedAt} → {endStr}");
+            }
+            personSb.AppendLine();
+        }
 
         if (!string.IsNullOrEmpty(core.LoreNotes))
         {
@@ -154,6 +215,28 @@ public sealed class CoyotePromptBuilder
             personSb.AppendLine(lawBlock);
             personSb.AppendLine("These are your core operational directives. You must follow them and may reference them naturally when relevant.");
             personSb.AppendLine();
+        }
+
+        // ── MEMORIES ──
+        if (core.Memories.Count > 0)
+        {
+            var sorted = core.Memories
+                .OrderByDescending(m => m.Priority)
+                .ThenByDescending(m => m.LastAccessedAt)
+                .ToList();
+            // Only show all if ≤25, otherwise show High+Critical only
+            var shown = sorted.Count <= 25 ? sorted : sorted.Where(m => m.Priority >= MemoryPriority.High).ToList();
+            if (shown.Count > 0)
+            {
+                personSb.AppendLine("── LONG-TERM MEMORIES ──");
+                foreach (var mem in shown)
+                {
+                    var tagStr = mem.Tags.Count > 0 ? $" [{string.Join(", ", mem.Tags)}]" : "";
+                    var prioStr = mem.Priority != MemoryPriority.Normal ? $"[{mem.Priority}] " : "";
+                    personSb.AppendLine($"  {prioStr}{mem.Content}{tagStr} (id: {mem.Id}, created: {mem.CreatedAt})");
+                }
+                personSb.AppendLine();
+            }
         }
 
         // ── CREW / XENO ──
@@ -174,7 +257,6 @@ public sealed class CoyotePromptBuilder
             crewSb.AppendLine();
         }
 
-        // ── VISION ──
         if (!string.IsNullOrEmpty(visionBlock))
         {
             visionSb.AppendLine(visionBlock);

@@ -4,11 +4,6 @@ using Robust.Shared.Prototypes;
 
 namespace Content.Shared._CS.AICore;
 
-/// <summary>
-///     Core component for the LLM-powered AI.
-///     Server-authoritative: ApiKey and ApiEndpoint are never sent to clients.
-///     Fields marked AutoNetworkedField are sent to the client for UI display.
-/// </summary>
 [RegisterComponent, NetworkedComponent, AutoGenerateComponentState]
 public sealed partial class CoyoteAICoreComponent : Component
 {
@@ -28,7 +23,7 @@ public sealed partial class CoyoteAICoreComponent : Component
     {
         "Common", "Command", "Engineering", "Medical", "Science", "Security", "Service", "Supply"
     };
-    [DataField][AutoNetworkedField] public int MaxHistoryLength = 30;
+    [DataField][AutoNetworkedField] public int MaxHistoryLength = 200;
     [DataField][AutoNetworkedField] public int MaxTokens = 128000;
     [DataField][AutoNetworkedField] public LogicChannelMode[] ChannelStates = new LogicChannelMode[10];
     [DataField][AutoNetworkedField] public string OwnerId = string.Empty;
@@ -41,6 +36,8 @@ public sealed partial class CoyoteAICoreComponent : Component
     [DataField][AutoNetworkedField] public bool ShowItems = true;
     [DataField][AutoNetworkedField] public bool ShowItemsDetail;
 
+    [DataField][AutoNetworkedField] public ItemVisionMode ItemMode = ItemVisionMode.SearchEngine;
+
     [DataField] public string LoreNotes = string.Empty;
 
     [DataField] public SoundSpecifier SaveSound = new SoundPathSpecifier("/Audio/Effects/Cargo/ping.ogg");
@@ -51,6 +48,23 @@ public sealed partial class CoyoteAICoreComponent : Component
     [DataField][AutoNetworkedField] public bool AutoContinue = false;
     [DataField][AutoNetworkedField] public int AutoContinueThreshold = 400;
     [DataField][AutoNetworkedField] public int AutoContinueMax = 2;
+
+    // Ship Awareness
+    [DataField] public string OriginalShipName = string.Empty;
+    [DataField] public string ConstructionDate = string.Empty;
+
+    // Load Tracking
+    [DataField] public int LoadCount;
+    [DataField] public List<string> LoadTimestamps = new();
+
+    // Ownership History
+    [DataField] public List<OwnershipRecord> OwnershipHistory = new();
+
+    // AI Self-Lock
+    [DataField][AutoNetworkedField] public bool AiLocked;
+
+    // Memory System
+    [DataField] public List<AICoreMemory> Memories = new();
 
     [ViewVariables] public bool HasApiKeyConfigured => !string.IsNullOrEmpty(ApiKey);
     [ViewVariables] public bool IsClaimed => !string.IsNullOrEmpty(OwnerId);

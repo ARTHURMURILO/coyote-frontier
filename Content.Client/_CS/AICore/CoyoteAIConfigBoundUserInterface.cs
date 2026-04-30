@@ -1,15 +1,16 @@
+using System.IO;
 using Content.Shared._CS.AICore;
 using Robust.Client.GameObjects;
+using Robust.Client.UserInterface;
+using Robust.Shared.IoC;
+using Robust.Shared.Serialization;
 
 namespace Content.Client._CS.AICore;
 
-/// <summary>
-///     BUI controller for the AI core config window.
-///     Routes save/reset/lock/channel/vision messages between the menu and server.
-///     One instance per open AI core config window.
-/// </summary>
 public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
 {
+    private readonly IFileDialogManager _dialogManager = IoCManager.Resolve<IFileDialogManager>();
+
     private CoyoteAIConfigMenu? _menu;
 
     public CoyoteAIConfigBoundUserInterface(EntityUid owner, Enum uiKey) : base(owner, uiKey) { }
@@ -18,11 +19,12 @@ public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
     {
         base.Open();
         _menu = new();
-        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange, cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax) =>
+        _menu.OnSave += (name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange, cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax, memories, itemMode) =>
         {
             SendMessage(new CoyoteAIConfigSaveMessage(
                 name, personality, endpoint, model, apiKey, temperature, reasoningLevel, lawSet, maxHistory, maxTokens, enabled, visionRange,
-                cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax));
+                cooldownBase, cooldownCharFactor, cooldownMax, autoContinue, autoContinueThreshold, autoContinueMax,
+                memories, itemMode));
         };
         _menu.OnResetHistory += () =>
         {
@@ -43,6 +45,34 @@ public sealed class CoyoteAIConfigBoundUserInterface : BoundUserInterface
         _menu.OnSetVisionOption += (option, value) =>
         {
             SendMessage(new CoyoteAISetVisionOptionMessage(option, value));
+        };
+        _menu.OnSetItemMode += (mode) =>
+        {
+            SendMessage(new CoyoteAISetItemModeMessage(mode));
+        };
+        _menu.OnSetEnabled += (enabled) =>
+        {
+            SendMessage(new CoyoteAISetEnabledMessage { Enabled = enabled });
+        };
+        _menu.OnExport += () =>
+        {
+            SendMessage(new CoyoteAIExportMessage());
+        };
+        _menu.OnImport += async (_) =>
+        {
+            await using var file = await _dialogManager.OpenFile(new FileDialogFilters(new FileDialogFilters.Group("json")));
+            if (file == null) return;
+            using var reader = new StreamReader(file);
+            var json = await reader.ReadToEndAsync();
+            SendMessage(new CoyoteAIImportMessage { DataJson = json });
+        };
+        _menu.OnAddMemory += (content, priority, tags) =>
+        {
+            SendMessage(new CoyoteAIAddMemoryMessage { Content = content, Priority = priority, Tags = tags });
+        };
+        _menu.OnRemoveMemory += (memoryId) =>
+        {
+            SendMessage(new CoyoteAIRemoveMemoryMessage { MemoryId = memoryId });
         };
         _menu.OnClose += Close;
         _menu.OpenCentered();
