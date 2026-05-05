@@ -818,6 +818,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.AutoContinue = args.AutoContinue;
         ent.Comp.AutoContinueThreshold = Math.Max(args.AutoContinueThreshold, 50);
         ent.Comp.AutoContinueMax = Math.Clamp(args.AutoContinueMax, 1, 10);
+        ent.Comp.RequestTimeout = Math.Clamp(args.RequestTimeout, 5f, 300f);
         ent.Comp.LocalItemMode = args.LocalItemMode;
         if (args.Memories != null)
             ent.Comp.Memories = args.Memories;
@@ -1299,6 +1300,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             autoContinue: ent.Comp.AutoContinue,
             autoContinueThreshold: ent.Comp.AutoContinueThreshold,
             autoContinueMax: ent.Comp.AutoContinueMax,
+            requestTimeout: ent.Comp.RequestTimeout,
             currentShipName: GetCurrentVesselName(ent),
             originalShipName: ent.Comp.OriginalShipName,
             constructionDate: ent.Comp.ConstructionDate,
@@ -2011,6 +2013,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
             AutoContinue = ent.Comp.AutoContinue,
             AutoContinueThreshold = ent.Comp.AutoContinueThreshold,
             AutoContinueMax = ent.Comp.AutoContinueMax,
+            RequestTimeout = ent.Comp.RequestTimeout,
             LoadCount = ent.Comp.LoadCount,
             LoadTimestamps = new(ent.Comp.LoadTimestamps),
             OriginalShipName = ent.Comp.OriginalShipName,
@@ -2050,6 +2053,7 @@ public sealed class CoyoteAICoreSystem : EntitySystem
         ent.Comp.AutoContinue = data.AutoContinue;
         ent.Comp.AutoContinueThreshold = Math.Max(data.AutoContinueThreshold, 50);
         ent.Comp.AutoContinueMax = Math.Clamp(data.AutoContinueMax, 1, 10);
+        ent.Comp.RequestTimeout = Math.Clamp(data.RequestTimeout, 5f, 300f);
         ent.Comp.LoadCount = data.LoadCount;
         ent.Comp.LoadTimestamps = new(data.LoadTimestamps);
         ent.Comp.OriginalShipName = data.OriginalShipName;

@@ -199,6 +199,15 @@
                     <Button Name="AutoContinueMaxDefault" Text="Default" MinSize="70 30" />
                 </BoxContainer>
 
+                <PanelContainer StyleClasses="LowDivider" Margin="0 4" />
+
+                <Label Text="LLM Request Timeout" FontColorOverride="#888888" />
+                <BoxContainer Orientation="Horizontal" SeparationOverride="6">
+                    <Label Text="Seconds" MinSize="60 0" VerticalAlignment="Center" />
+                    <LineEdit Name="RequestTimeoutEdit" MinSize="80 30" />
+                    <Button Name="RequestTimeoutDefault" Text="Default" MinSize="70 30" />
+                </BoxContainer>
+
             </BoxContainer>
 
             <PanelContainer StyleClasses="LowDivider" Margin="0 4" />

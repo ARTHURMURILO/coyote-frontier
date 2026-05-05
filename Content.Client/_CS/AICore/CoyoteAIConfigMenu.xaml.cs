@@ -13,7 +13,7 @@ namespace Content.Client._CS.AICore;
 [GenerateTypedNameReferences]
 public sealed partial class CoyoteAIConfigMenu : FancyWindow
 {
-    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax, List<AICoreMemory>? memories, ItemVisionMode localItemMode, string[] channelLabels);
+    public delegate void SaveDelegate(string name, string personality, string endpoint, string model, string apiKey, float temperature, ReasoningLevel reasoningLevel, string lawSet, int maxHistory, int maxTokens, bool enabled, float visionRange, float cooldownBase, float cooldownCharFactor, float cooldownMax, bool autoContinue, int autoContinueThreshold, int autoContinueMax, List<AICoreMemory>? memories, ItemVisionMode localItemMode, string[] channelLabels, float requestTimeout);
     public event SaveDelegate? OnSave;
     public event Action? OnResetHistory;
     public event Action<int, LogicChannelMode>? OnSetChannel;
@@ -70,6 +70,8 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         AutoContinueThresholdEdit.PlaceHolder = "400";
         AutoContinueMaxEdit.PlaceHolder = "2";
 
+        RequestTimeoutEdit.PlaceHolder = "30";
+
         LawSetDropdown.OnItemSelected += args =>
         {
             LawSetDropdown.SelectId(args.Id);
@@ -98,6 +100,7 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         CooldownMaxDefault.OnPressed += _ => CooldownMaxEdit.Text = "4.0";
         AutoContinueThresholdDefault.OnPressed += _ => AutoContinueThresholdEdit.Text = "400";
         AutoContinueMaxDefault.OnPressed += _ => AutoContinueMaxEdit.Text = "2";
+        RequestTimeoutDefault.OnPressed += _ => RequestTimeoutEdit.Text = "30";
 
         SaveButton.OnPressed += _ => PerformSave();
 
@@ -254,11 +257,15 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
         int.TryParse(AutoContinueMaxEdit.Text.Trim(), out var autoMax);
         if (autoMax < 1) autoMax = 2;
 
+        float.TryParse(RequestTimeoutEdit.Text.Trim(), out var requestTimeout);
+        if (requestTimeout < 5f) requestTimeout = 30f;
+        if (requestTimeout > 300f) requestTimeout = 300f;
+
         var labels = new string[20];
         for (int i = 0; i < 20; i++)
             labels[i] = _channelLabelEdits[i]?.Text ?? string.Empty;
 
-        OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax, _memories, (ItemVisionMode)LocalItemModeDropdown.SelectedId, labels);
+        OnSave?.Invoke(name, personality, endpoint, model, apiKey, temp, reasoning, selectedLawSet, maxHistory, maxTokens, enabled, visionRange, cdBase, cdFactor, cdMax, autoContinue, autoThreshold, autoMax, _memories, (ItemVisionMode)LocalItemModeDropdown.SelectedId, labels, requestTimeout);
     }
 
     private void SetupConfirmButton(Button btn, string defaultText, Action onConfirm)
@@ -732,6 +739,7 @@ public sealed partial class CoyoteAIConfigMenu : FancyWindow
             AutoContinueCheck.Pressed = state.AutoContinue;
             AutoContinueThresholdEdit.Text = state.AutoContinueThreshold.ToString();
             AutoContinueMaxEdit.Text = state.AutoContinueMax.ToString();
+            RequestTimeoutEdit.Text = state.RequestTimeout.ToString("F0");
 
             LawSetDropdown.Clear();
             var selectedIndex = 0;

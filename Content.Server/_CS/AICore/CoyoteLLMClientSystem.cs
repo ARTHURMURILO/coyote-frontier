@@ -12,7 +12,7 @@ namespace Content.Server._CS.AICore;
 ///     HTTP client for the LLM API (OpenAI-compatible chat completions endpoint).
 ///     Sends system+user messages, deserializes the JSON response into <see cref="LLMResponse"/>.
 ///     Supports Bearer token auth, configurable model/temperature/max_tokens/reasoning_effort,
-///     and a 30-second timeout.
+///     and a configurable request timeout (default 30s).
 ///     The response is parsed by stripping markdown fences and extracting the first JSON object.
 /// </summary>
 public sealed class CoyoteLLMClientSystem : EntitySystem
@@ -66,7 +66,7 @@ public sealed class CoyoteLLMClientSystem : EntitySystem
             if (!string.IsNullOrEmpty(core.ApiKey))
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", core.ApiKey);
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(core.RequestTimeout));
             using var response = await _http.SendAsync(request, cts.Token);
             if (!response.IsSuccessStatusCode)
             {

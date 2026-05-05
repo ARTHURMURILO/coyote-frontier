@@ -78,6 +78,10 @@ public sealed partial class CoyoteAICoreComponent : Component
     // Ownership History
     [DataField] public List<OwnershipRecord> OwnershipHistory = new();
 
+    // Request timeout in seconds for LLM HTTP calls (5-300).
+    // Default 30 accommodates hosted APIs; local models often need 60-120.
+    [DataField][AutoNetworkedField] public float RequestTimeout = 30f;
+
     // AI Self-Lock
     [DataField][AutoNetworkedField] public bool AiLocked;
 

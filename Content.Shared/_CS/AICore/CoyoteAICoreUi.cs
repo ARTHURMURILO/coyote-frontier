@@ -131,6 +131,8 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
     // Export
     public string ExportYaml = string.Empty;
 
+    public float RequestTimeout;
+
     public CoyoteAIConfigBuiState(string aiName, string personalityPrompt, string apiEndpoint,
         string modelName, float temperature, bool hasApiKey,
         ReasoningLevel reasoningLevel, string lawSet, string[] availableLawSets,
@@ -161,7 +163,8 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         bool aiLocked = false,
         HashSet<string>? radioChannels = null,
         List<AICoreMemory>? memories = null,
-        string exportYaml = "")
+        string exportYaml = "",
+        float requestTimeout = 30f)
     {
         AiName = aiName;
         PersonalityPrompt = personalityPrompt;
@@ -224,6 +227,7 @@ public sealed class CoyoteAIConfigBuiState : BoundUserInterfaceState
         RadioChannels = radioChannels ?? new();
         Memories = memories ?? new();
         ExportYaml = exportYaml;
+        RequestTimeout = requestTimeout;
         RefreshOnly = false;
     }
 }
@@ -252,6 +256,7 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
     public List<AICoreMemory>? Memories;
     public ItemVisionMode LocalItemMode = ItemVisionMode.SearchEngine;
     public string[] ChannelLabels = new string[20];
+    public float RequestTimeout = 30f;
 
     public CoyoteAIConfigSaveMessage(string aiName, string personalityPrompt, string apiEndpoint,
         string modelName, string apiKey, float temperature, ReasoningLevel reasoningLevel,
@@ -260,7 +265,8 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
         bool autoContinue = false, int autoContinueThreshold = 400, int autoContinueMax = 2,
         List<AICoreMemory>? memories = null,
         ItemVisionMode localItemMode = ItemVisionMode.SearchEngine,
-        string[]? channelLabels = null)
+        string[]? channelLabels = null,
+        float requestTimeout = 30f)
     {
         AiName = aiName;
         PersonalityPrompt = personalityPrompt;
@@ -283,6 +289,7 @@ public sealed class CoyoteAIConfigSaveMessage : BoundUserInterfaceMessage
         Memories = memories;
         LocalItemMode = localItemMode;
         ChannelLabels = channelLabels ?? new string[20];
+        RequestTimeout = requestTimeout;
     }
 }
 
@@ -547,6 +554,7 @@ public sealed class AICoreExportData
     public bool AutoContinue;
     public int AutoContinueThreshold = 400;
     public int AutoContinueMax = 2;
+    public float RequestTimeout = 30f;
     public int LoadCount;
     public List<string> LoadTimestamps = new();
     public string OriginalShipName = string.Empty;
