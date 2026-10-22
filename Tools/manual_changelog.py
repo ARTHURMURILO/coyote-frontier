@@ -14,7 +14,7 @@ def make_timestamp():
 
 def load_changelog(infile):
     print(f"Loading changelog {infile.name} ...")
-    return yaml_safe_load(infile)
+    return yaml_safe_load(infile) or {}
 
 def make_change(change_type, message):
     change_type = change_type.lower().capitalize()
@@ -28,7 +28,10 @@ def make_change(change_type, message):
     }
 
 def get_last_id(changelog):
-    return changelog['Entries'][-1]['id']
+    entries = changelog.get('Entries') or []
+    if not entries:
+        return 0
+    return entries[-1]['id']
 
 def insert_entry(changelog, author, changes):
     new_id = 1 + get_last_id(changelog)
@@ -42,11 +45,11 @@ def insert_entry(changelog, author, changes):
         'time': make_timestamp(),
     }
 
-    changelog['Entries'].append(entry)
+    changelog.setdefault('Entries', []).append(entry)
 
 def prune_entries(changelog, max_entries=500):
     print(f"Pruning changelog to a maxmimum of {max_entries} entries ...")
-    changelog['Entries'] = changelog['Entries'][-max_entries:]
+    changelog['Entries'] = (changelog.get('Entries') or [])[-max_entries:]
 
 def save_changelog(changelog, outfile):
     print(f"Saving changelog to {outfile.name} ...")

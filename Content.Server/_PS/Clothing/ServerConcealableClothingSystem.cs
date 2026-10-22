@@ -16,7 +16,8 @@ public sealed class ServerConcealableClothingSystem : SharedConcealableClothingS
 
     private void OnRemoved(Entity<ConcealableClothingImplantComponent> ent, ref EntGotRemovedFromContainerMessage args)
     {
-        if (!TryComp<ConcealableClothingUserComponent>(args.Container.Owner, out var comp))
+        var user = args.Container.Owner;
+        if (!TryComp<ConcealableClothingUserComponent>(user, out var comp))
             return;
 
         var category = ent.Comp.Category;
@@ -24,9 +25,11 @@ public sealed class ServerConcealableClothingSystem : SharedConcealableClothingS
         comp.Categories.Remove(string.IsNullOrEmpty(category) ? "*" : category);
 
         if (comp.Categories.Count == 0)
-            RemCompDeferred<ConcealableClothingUserComponent>(args.Container.Owner);
+            RemCompDeferred<ConcealableClothingUserComponent>(user);
         else
-            Dirty(args.Container.Owner, comp);
+            Dirty(user, comp);
+
+        RefreshConcealmentActions(user);
     }
 
     private void OnImplanted(EntityUid uid, ConcealableClothingImplantComponent component, ImplantImplantedEvent args)
@@ -41,5 +44,6 @@ public sealed class ServerConcealableClothingSystem : SharedConcealableClothingS
         userComponent.Categories.Add(string.IsNullOrEmpty(category) ? "*" : category);
 
         Dirty(user, userComponent);
+        RefreshConcealmentActions(user);
     }
 }

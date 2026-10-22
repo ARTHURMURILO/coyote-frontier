@@ -1,0 +1,5 @@
+- type: loadout
+  id: ContractorClothingConcealmentBackpackImplanter
+  name: dorsualiphobic augmentation implanter
+  implants:
+  - ClothingConcealmentBackpackImplanter

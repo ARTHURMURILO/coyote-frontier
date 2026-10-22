@@ -29,9 +29,10 @@ Small fixes/refactors are exempt. Media may be used in SS14 progress reports wit
 <!-- List any breaking changes, including namespaces, public class/method/field changes, prototype renames; and provide instructions for fixing them. -->
 
 **Changelog**
-<!-- Add a Changelog entry to make players aware of new features or changes that could affect gameplay.
-Make sure to read the guidelines and take this Changelog template out of the comment block in order for it to show up.
-Changelog must have a :cl: symbol, so the bot recognizes the changes and adds them to the game's changelog. -->
+<!-- Changelogs are added manually to Resources/Changelog/Palmtree.yml.
+Draft entries from your commits with: python3 Tools/_PS/generate_commit_changelog.py --from <rev>
+(or use Tools/manual_changelog.py). See .ai/guides/changelogs.md. The optional :cl: block below is
+only syntax-checked by CI; nothing generates entries from it anymore. -->
 <!--
 :cl:
 - add: Added fun!

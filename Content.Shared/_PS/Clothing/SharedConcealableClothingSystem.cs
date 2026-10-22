@@ -21,6 +21,7 @@ public abstract class SharedConcealableClothingSystem : EntitySystem
     [Dependency] private readonly SharedPopupSystem _popup = default!;
     [Dependency] private readonly IGameTiming _timing = default!;
     [Dependency] private readonly SharedItemSystem _item = default!;
+    [Dependency] private readonly InventorySystem _inventory = default!;
 
     public override void Initialize()
     {
@@ -65,6 +66,34 @@ public abstract class SharedConcealableClothingSystem : EntitySystem
             args.AddAction(ref component.ToggleActionEntity, component.ToggleAction);
     }
 
+    /// <summary>
+    /// Re-evaluates the concealment actions of the given entity's currently equipped clothing.
+    /// </summary>
+    /// <remarks>
+    /// Item actions are only granted when an item gets equipped, so changing the entity's
+    /// concealment implants (e.g. injecting the implant while already wearing a backpack) would
+    /// otherwise leave the already equipped clothing without its toggle action until it is
+    /// unequipped and equipped again.
+    /// </remarks>
+    protected void RefreshConcealmentActions(EntityUid user)
+    {
+        if (TerminatingOrDeleted(user))
+            return;
+
+        if (!_inventory.TryGetContainerSlotEnumerator(user, out var slots))
+            return;
+
+        while (slots.NextItem(out var item))
+        {
+            if (!TryComp<ConcealableClothingComponent>(item, out var clothing))
+                continue;
+
+            if (HasConcealableImplant(user, clothing))
+                _actions.AddAction(user, ref clothing.ToggleActionEntity, clothing.ToggleAction, item);
+            else if (clothing.ToggleActionEntity is { } action)
+                _actions.RemoveProvidedAction(user, item, action);
+        }
+    }
 
     private bool HasConcealableImplant(EntityUid user, ConcealableClothingComponent component)
     {

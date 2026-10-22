@@ -513,6 +513,7 @@ public sealed partial class MarkingPicker : Control
                 CMarkingColors.AddChild(colorContainer);
 
             ColorSelectorSliders colorSelector = new ColorSelectorSliders();
+            colorSelector.SelectorType = ColorSelectorSliders.ColorSelectorType.Hsv;
             colorSelector.IsAlphaVisible = true;
 
             colorContainer.AddChild(new Label { Text = $"{stateNames[i]} color:" });
